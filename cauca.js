@@ -139,6 +139,10 @@ module.exports = class {
       baseChance += 10; // Tăng 10% tỉ lệ rare
     } else if (data.bait === "Mồi hiếm") {
       baseChance += 25; // Tăng 25% tỉ lệ rare & legendary
+    } else if (data.bait === "Mồi thần") {
+      baseChance += 40; // Tăng 40% tỉ lệ rare & legendary
+    } else if (data.bait === "Mồi vũ trụ") {
+      baseChance += 60; // Tăng 60% tỉ lệ rare & legendary
     }
     
     // Ảnh hưởng của cần câu
@@ -263,13 +267,34 @@ module.exports = class {
 
     if (action === "buy") {
       const shopItems = {
-        "cần bạc": { price: 5000, type: "rod", name: "Cần Bạc", tier: 0 },
-        "cần vàng": { price: 15000, type: "rod", name: "Cần Vàng", tier: 0 },
+        // Cần câu shop
+        "cần đồng": { price: 2000, type: "rod", name: "Cần Đồng", tier: 0 },
+        "cần sắt": { price: 5000, type: "rod", name: "Cần Sắt", tier: 0 },
+        "cần bạc": { price: 10000, type: "rod", name: "Cần Bạc", tier: 0 },
+        "cần vàng": { price: 20000, type: "rod", name: "Cần Vàng", tier: 0 },
+        "cần bạch kim": { price: 50000, type: "rod", name: "Cần Bạch Kim", tier: 0 },
+        "cần kim cương": { price: 100000, type: "rod", name: "Cần Kim Cương", tier: 0 },
+        
+        // Dây câu shop
         "dây thường": { price: 200, type: "line", name: "Dây thường", durability: 20, maxDurability: 20 },
         "dây bền": { price: 500, type: "line", name: "Dây bền", durability: 40, maxDurability: 40 },
+        "dây thép": { price: 1000, type: "line", name: "Dây thép", durability: 60, maxDurability: 60 },
+        "dây titan": { price: 2000, type: "line", name: "Dây titan", durability: 80, maxDurability: 80 },
+        "dây nano": { price: 5000, type: "line", name: "Dây nano", durability: 100, maxDurability: 100 },
+        "dây vũ trụ": { price: 10000, type: "line", name: "Dây vũ trụ", durability: 150, maxDurability: 150 },
+        
+        // Đá nâng cấp
         "đá nâng cấp": { price: 1000, type: "item", name: "Đá nâng cấp" },
+        "đá hiếm": { price: 3000, type: "item", name: "Đá hiếm" },
+        "đá thần": { price: 10000, type: "item", name: "Đá thần" },
+        
+        // Mồi
         "mồi thơm": { price: 800, type: "item", name: "Mồi thơm" },
         "mồi hiếm": { price: 2000, type: "item", name: "Mồi hiếm" },
+        "mồi thần": { price: 5000, type: "item", name: "Mồi thần" },
+        "mồi vũ trụ": { price: 15000, type: "item", name: "Mồi vũ trụ" },
+        
+        // Khám phá
         "key": { price: 5000, type: "exploration", name: "Key" },
         "oxygen tank": { price: 3000, type: "exploration", name: "Oxygen Tank" },
         "gacha ticket": { price: 1000, type: "gacha", name: "Gacha Ticket" }
@@ -318,13 +343,25 @@ module.exports = class {
 
     if (!action) {
       return api.sendMessage(
-        `⚒️ CHẾ TẠO\n\n• Cần Rồng (+1): yêu cầu Cần Bạc + Đá x3\n• Cần Bóng Tối (+2): Cần Vàng + Đá x5\n• Không thể mua các cần này từ shop!\n\n💡 Cách dùng: .fish craft [tên cần]`,
+        `⚒️ CHẾ TẠO\n\n` +
+        `🎣 CẦN CÂU CRAFT:\n` +
+        `• Cần Rồng (+1): Cần Bạc + Đá x3\n` +
+        `• Cần Bóng Tối (+2): Cần Vàng + Đá x5\n` +
+        `• Cần Thần (+3): Cần Bạch Kim + Đá hiếm x3\n` +
+        `• Cần Vũ Trụ (+4): Cần Kim Cương + Đá thần x2\n` +
+        `• Cần Hỗn Loạn (+5): Cần Vũ Trụ + Đá thần x5\n\n` +
+        `🧵 DÂY CÂU CRAFT:\n` +
+        `• Dây Ma: Dây thép + Đá x2\n` +
+        `• Dây Thần: Dây titan + Đá hiếm x2\n` +
+        `• Dây Vĩnh Cửu: Dây nano + Đá thần x3\n\n` +
+        `💡 Cách dùng: .fish craft [tên]`,
         threadID,
         messageID
       );
     }
 
     const craftRecipes = {
+      // Cần câu craft
       "cần rồng": {
         requirements: { "Cần Bạc": 1, "Đá nâng cấp": 3 },
         result: { name: "Cần Rồng", tier: 1 }
@@ -332,6 +369,32 @@ module.exports = class {
       "cần bóng tối": {
         requirements: { "Cần Vàng": 1, "Đá nâng cấp": 5 },
         result: { name: "Cần Bóng Tối", tier: 2 }
+      },
+      "cần thần": {
+        requirements: { "Cần Bạch Kim": 1, "Đá hiếm": 3 },
+        result: { name: "Cần Thần", tier: 3 }
+      },
+      "cần vũ trụ": {
+        requirements: { "Cần Kim Cương": 1, "Đá thần": 2 },
+        result: { name: "Cần Vũ Trụ", tier: 4 }
+      },
+      "cần hỗn loạn": {
+        requirements: { "Cần Vũ Trụ": 1, "Đá thần": 5 },
+        result: { name: "Cần Hỗn Loạn", tier: 5 }
+      },
+      
+      // Dây câu craft
+      "dây ma": {
+        requirements: { "Dây thép": 1, "Đá nâng cấp": 2 },
+        result: { name: "Dây Ma", durability: 120, maxDurability: 120 }
+      },
+      "dây thần": {
+        requirements: { "Dây titan": 1, "Đá hiếm": 2 },
+        result: { name: "Dây Thần", durability: 200, maxDurability: 200 }
+      },
+      "dây vĩnh cửu": {
+        requirements: { "Dây nano": 1, "Đá thần": 3 },
+        result: { name: "Dây Vĩnh Cửu", durability: 999, maxDurability: 999 }
       }
     };
 
@@ -342,25 +405,41 @@ module.exports = class {
 
     // Kiểm tra nguyên liệu
     for (const [item, required] of Object.entries(recipe.requirements)) {
-      if (item === "Cần Bạc" && data.rod.name !== "Cần Bạc") {
-        return api.sendMessage(`❌ Bạn cần có Cần Bạc để chế tạo!`, threadID, messageID);
+      // Kiểm tra cần câu
+      if (item.includes("Cần") && data.rod.name !== item) {
+        return api.sendMessage(`❌ Bạn cần có ${item} để chế tạo!`, threadID, messageID);
       }
-      if (item === "Cần Vàng" && data.rod.name !== "Cần Vàng") {
-        return api.sendMessage(`❌ Bạn cần có Cần Vàng để chế tạo!`, threadID, messageID);
+      // Kiểm tra dây câu
+      if (item.includes("Dây") && data.line.name !== item) {
+        return api.sendMessage(`❌ Bạn cần có ${item} để chế tạo!`, threadID, messageID);
       }
-      if (item === "Đá nâng cấp" && (data.inventory["Đá nâng cấp"] || 0) < required) {
-        return api.sendMessage(`❌ Bạn cần ${required}x Đá nâng cấp để chế tạo!`, threadID, messageID);
+      // Kiểm tra đá
+      if (item.includes("Đá") && (data.inventory[item] || 0) < required) {
+        return api.sendMessage(`❌ Bạn cần ${required}x ${item} để chế tạo!`, threadID, messageID);
       }
     }
 
     // Thực hiện chế tạo
-    data.rod = recipe.result;
-    if (data.inventory["Đá nâng cấp"]) {
-      data.inventory["Đá nâng cấp"] -= recipe.requirements["Đá nâng cấp"];
+    if (recipe.result.name.includes("Cần")) {
+      data.rod = recipe.result;
+    } else if (recipe.result.name.includes("Dây")) {
+      data.line = recipe.result;
+    }
+    
+    // Trừ nguyên liệu
+    for (const [item, required] of Object.entries(recipe.requirements)) {
+      if (item.includes("Đá")) {
+        data.inventory[item] -= required;
+      }
     }
 
     fs.writeFileSync(userFile, JSON.stringify(data, null, 2));
-    return api.sendMessage(`✅ Chế tạo thành công ${recipe.result.name} (+${recipe.result.tier})!`, threadID, messageID);
+    
+    const resultMsg = recipe.result.name.includes("Cần") 
+      ? `✅ Chế tạo thành công ${recipe.result.name} (+${recipe.result.tier})!`
+      : `✅ Chế tạo thành công ${recipe.result.name} (${recipe.result.durability}/${recipe.result.maxDurability})!`;
+    
+    return api.sendMessage(resultMsg, threadID, messageID);
   }
 
   static async handle_upgrade({ api, event, model, Threads, Users, Currencies, args }) {
@@ -1179,16 +1258,44 @@ module.exports = class {
     if (!action) {
       const rodSkins = [
         { name: "default", display: "Cần Gỗ", unlocked: true },
-        { name: "diamond", display: "Cần Kim Cương", unlocked: false },
+        { name: "copper", display: "Cần Đồng", unlocked: true },
+        { name: "iron", display: "Cần Sắt", unlocked: true },
+        { name: "silver", display: "Cần Bạc", unlocked: true },
+        { name: "gold", display: "Cần Vàng", unlocked: true },
+        { name: "platinum", display: "Cần Bạch Kim", unlocked: true },
+        { name: "diamond", display: "Cần Kim Cương", unlocked: true },
+        { name: "dragon", display: "Cần Rồng", unlocked: false },
+        { name: "shadow", display: "Cần Bóng Tối", unlocked: false },
+        { name: "divine", display: "Cần Thần", unlocked: false },
+        { name: "cosmic", display: "Cần Vũ Trụ", unlocked: false },
+        { name: "chaos", display: "Cần Hỗn Loạn", unlocked: false },
         { name: "rainbow", display: "Cần Cầu Vồng", unlocked: false },
-        { name: "shadow", display: "Cần Bóng Đêm", unlocked: false },
-        { name: "divine", display: "Cần Thần", unlocked: false }
+        { name: "neon", display: "Cần Neon", unlocked: false },
+        { name: "crystal", display: "Cần Pha Lê", unlocked: false }
       ];
 
       const bagSkins = [
         { name: "default", display: "Túi Thường", unlocked: true },
+        { name: "leather", display: "Túi Da", unlocked: true },
+        { name: "canvas", display: "Túi Vải", unlocked: true },
         { name: "magic", display: "Túi Ma Thuật", unlocked: false },
-        { name: "infinite", display: "Túi Vô Hạn", unlocked: false }
+        { name: "infinite", display: "Túi Vô Hạn", unlocked: false },
+        { name: "cosmic", display: "Túi Vũ Trụ", unlocked: false },
+        { name: "crystal", display: "Túi Pha Lê", unlocked: false },
+        { name: "golden", display: "Túi Vàng", unlocked: false }
+      ];
+
+      const avatarSkins = [
+        { name: "default", display: "Ngư Dân", unlocked: true },
+        { name: "fisher", display: "Ngư Dân Chuyên", unlocked: false },
+        { name: "master", display: "Bậc Thầy", unlocked: false },
+        { name: "legend", display: "Huyền Thoại", unlocked: false },
+        { name: "god", display: "Thần Cá", unlocked: false },
+        { name: "cosmic", display: "Ngư Dân Vũ Trụ", unlocked: false },
+        { name: "ninja", display: "Ngư Dân Ninja", unlocked: false },
+        { name: "samurai", display: "Ngư Dân Samurai", unlocked: false },
+        { name: "wizard", display: "Pháp Sư Cá", unlocked: false },
+        { name: "robot", display: "Ngư Dân Robot", unlocked: false }
       ];
 
       const rodList = rodSkins.map(skin => {
@@ -1201,15 +1308,23 @@ module.exports = class {
         return `${status} ${skin.display}`;
       }).join("\n");
 
+      const avatarList = avatarSkins.map(skin => {
+        const status = skin.unlocked ? "✅" : "🔒";
+        return `${status} ${skin.display}`;
+      }).join("\n");
+
       return api.sendMessage(
         `🎨 SKIN SYSTEM\n\n` +
         `🎣 Cần câu hiện tại: ${data.skins.rod}\n` +
-        `🎒 Túi đồ hiện tại: ${data.skins.bag}\n\n` +
+        `🎒 Túi đồ hiện tại: ${data.skins.bag}\n` +
+        `👤 Avatar hiện tại: ${data.skins.avatar}\n\n` +
         `🎣 ROD SKINS:\n${rodList}\n\n` +
         `🎒 BAG SKINS:\n${bagList}\n\n` +
+        `👤 AVATAR SKINS:\n${avatarList}\n\n` +
         `💡 Lệnh:\n` +
         `• .fish skin rod [tên] - Đổi skin cần\n` +
         `• .fish skin bag [tên] - Đổi skin túi\n` +
+        `• .fish skin avatar [tên] - Đổi avatar\n` +
         `• .fish skin unlock [type] [tên] - Mở khóa skin`,
         threadID, messageID
       );
@@ -1221,7 +1336,7 @@ module.exports = class {
         return api.sendMessage(`❌ Vui lòng chọn skin!`, threadID, messageID);
       }
 
-      const availableSkins = ["default", "diamond", "rainbow", "shadow", "divine"];
+      const availableSkins = ["default", "copper", "iron", "silver", "gold", "platinum", "diamond", "dragon", "shadow", "divine", "cosmic", "chaos", "rainbow", "neon", "crystal"];
       if (!availableSkins.includes(skinName)) {
         return api.sendMessage(`❌ Skin "${skinName}" không tồn tại!`, threadID, messageID);
       }
@@ -1237,7 +1352,7 @@ module.exports = class {
         return api.sendMessage(`❌ Vui lòng chọn skin!`, threadID, messageID);
       }
 
-      const availableSkins = ["default", "magic", "infinite"];
+      const availableSkins = ["default", "leather", "canvas", "magic", "infinite", "cosmic", "crystal", "golden"];
       if (!availableSkins.includes(skinName)) {
         return api.sendMessage(`❌ Skin "${skinName}" không tồn tại!`, threadID, messageID);
       }
@@ -1245,6 +1360,22 @@ module.exports = class {
       data.skins.bag = skinName;
       fs.writeFileSync(userFile, JSON.stringify(data, null, 2));
       return api.sendMessage(`✅ Đã đổi skin túi đồ thành: ${skinName}!`, threadID, messageID);
+    }
+
+    if (action === "avatar") {
+      const skinName = args[2]?.toLowerCase();
+      if (!skinName) {
+        return api.sendMessage(`❌ Vui lòng chọn avatar!`, threadID, messageID);
+      }
+
+      const availableAvatars = ["default", "fisher", "master", "legend", "god", "cosmic", "ninja", "samurai", "wizard", "robot"];
+      if (!availableAvatars.includes(skinName)) {
+        return api.sendMessage(`❌ Avatar "${skinName}" không tồn tại!`, threadID, messageID);
+      }
+
+      data.skins.avatar = skinName;
+      fs.writeFileSync(userFile, JSON.stringify(data, null, 2));
+      return api.sendMessage(`✅ Đã đổi avatar thành: ${skinName}!`, threadID, messageID);
     }
 
     if (action === "unlock") {
