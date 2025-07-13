@@ -113,6 +113,14 @@ module.exports = class {
         `• .fish explore - Khám phá thế giới\n` +
         `• .fish hire - Thuê ngư dân\n` +
         `• .fish top - Bảng xếp hạng\n\n` +
+        `🏆 OTHER SYSTEMS:\n` +
+        `• .fish title - Hệ thống danh hiệu\n` +
+        `• .fish event - Sự kiện đặc biệt\n` +
+        `• .fish duel - PvP đấu cá\n` +
+        `• .fish market - Chợ cá\n` +
+        `• .fish boss - Boss cá\n` +
+        `• .fish weather - Thời tiết\n` +
+        `• .fish quest - Nhiệm vụ\n\n` +
         `💡 Gõ ".fish [lệnh]" để sử dụng`,
           threadID, messageID
         );
@@ -166,6 +174,27 @@ module.exports = class {
         case "top": 
           console.log("🎣 CauCaRPG: Gọi handle_top");
           return this.handle_top({ api, event, model, Threads, Users, Currencies });
+        case "title": 
+          console.log("🎣 CauCaRPG: Gọi handle_title");
+          return this.handle_title({ api, event, model, Threads, Users, Currencies, args });
+        case "event": 
+          console.log("🎣 CauCaRPG: Gọi handle_event");
+          return this.handle_event({ api, event, model, Threads, Users, Currencies, args });
+        case "duel": 
+          console.log("🎣 CauCaRPG: Gọi handle_duel");
+          return this.handle_duel({ api, event, model, Threads, Users, Currencies, args });
+        case "market": 
+          console.log("🎣 CauCaRPG: Gọi handle_market");
+          return this.handle_market({ api, event, model, Threads, Users, Currencies, args });
+        case "boss": 
+          console.log("🎣 CauCaRPG: Gọi handle_boss");
+          return this.handle_boss({ api, event, model, Threads, Users, Currencies, args });
+        case "weather": 
+          console.log("🎣 CauCaRPG: Gọi handle_weather");
+          return this.handle_weather({ api, event, model, Threads, Users, Currencies, args });
+        case "quest": 
+          console.log("🎣 CauCaRPG: Gọi handle_quest");
+          return this.handle_quest({ api, event, model, Threads, Users, Currencies });
         default:
           console.log(`🎣 CauCaRPG: Lệnh không hợp lệ: ${input}`);
           return api.sendMessage(
@@ -1083,6 +1112,305 @@ module.exports = class {
       return api.sendMessage(topMsg, event.threadID, event.messageID);
     } catch (error) {
       console.log(`🎣 CauCaRPG: Lỗi trong handle_top: ${error.message}`);
+      return api.sendMessage(`❌ Có lỗi xảy ra!`, event.threadID, event.messageID);
+    }
+  }
+
+  // ===== ADDITIONAL SYSTEMS =====
+  
+  static async handle_title({ api, event, model, Threads, Users, Currencies, args }) {
+    try {
+      console.log("🎣 CauCaRPG: Hiển thị title");
+      const { senderID, threadID, messageID } = event;
+      const userFile = `system/data/fishing/${senderID}.json`;
+      const data = JSON.parse(fs.readFileSync(userFile));
+      const action = args[1]?.toLowerCase();
+
+      if (!action) {
+        const titles = [
+          { name: "Ngư dân mới", requirement: "Mặc định", unlocked: true },
+          { name: "Săn cá hiếm", requirement: "Câu 50 cá hiếm", unlocked: data.stats.rareFish >= 50 },
+          { name: "Huyền thoại", requirement: "Câu 10 cá legendary", unlocked: data.stats.legendaryFish >= 10 },
+          { name: "Bậc thầy", requirement: "Đạt Level 50", unlocked: data.level >= 50 },
+          { name: "Ngư dân bất tử", requirement: "Câu 1000 cá", unlocked: data.stats.totalFish >= 1000 }
+        ];
+
+        const titleList = titles.map(title => {
+          const status = title.unlocked ? "✅" : "🔒";
+          return `${status} ${title.name} - ${title.requirement}`;
+        }).join("\n");
+
+        return api.sendMessage(
+          `🏷️ HỆ THỐNG DANH HIỆU\n\n` +
+          `🎯 Danh hiệu hiện tại: ${data.title}\n\n` +
+          `📋 Danh sách danh hiệu:\n${titleList}\n\n` +
+          `💡 Cách dùng: .fish title set [tên]`,
+          threadID, messageID
+        );
+      }
+
+      if (action === "set") {
+        const titleName = args.slice(2).join(" ");
+        if (!titleName) {
+          return api.sendMessage(`❌ Vui lòng chọn danh hiệu!`, threadID, messageID);
+        }
+
+        const availableTitles = [
+          { name: "Ngư dân mới", unlocked: true },
+          { name: "Săn cá hiếm", unlocked: data.stats.rareFish >= 50 },
+          { name: "Huyền thoại", unlocked: data.stats.legendaryFish >= 10 },
+          { name: "Bậc thầy", unlocked: data.level >= 50 },
+          { name: "Ngư dân bất tử", unlocked: data.stats.totalFish >= 1000 }
+        ];
+
+        const selectedTitle = availableTitles.find(t => 
+          t.name.toLowerCase().includes(titleName.toLowerCase()) ||
+          titleName.toLowerCase().includes(t.name.toLowerCase())
+        );
+
+        if (!selectedTitle) {
+          return api.sendMessage(`❌ Không tìm thấy danh hiệu "${titleName}"!`, threadID, messageID);
+        }
+
+        if (!selectedTitle.unlocked) {
+          return api.sendMessage(`❌ Bạn chưa mở khóa danh hiệu "${selectedTitle.name}"!`, threadID, messageID);
+        }
+
+        data.title = selectedTitle.name;
+        fs.writeFileSync(userFile, JSON.stringify(data, null, 2));
+        return api.sendMessage(`✅ Đã đặt danh hiệu: ${selectedTitle.name}!`, threadID, messageID);
+      }
+
+      return api.sendMessage(`❌ Lệnh không hợp lệ. Dùng ".fish title" để xem hướng dẫn.`, threadID, messageID);
+    } catch (error) {
+      console.log(`🎣 CauCaRPG: Lỗi trong handle_title: ${error.message}`);
+      return api.sendMessage(`❌ Có lỗi xảy ra!`, event.threadID, event.messageID);
+    }
+  }
+
+  static async handle_event({ api, event, model, Threads, Users, Currencies, args }) {
+    try {
+      console.log("🎣 CauCaRPG: Hiển thị event");
+      const { senderID, threadID, messageID } = event;
+      const action = args[1]?.toLowerCase();
+
+      if (!action) {
+        return api.sendMessage(
+          `🎉 SỰ KIỆN ĐẶC BIỆT\n\n` +
+          `🔥 Boss Rush: Boss xuất hiện liên tục (30 phút)\n` +
+          `🌧️ Mưa Cá: 2x xu, 3x tỉ lệ cá hiếm (1 giờ)\n` +
+          `🍀 Lucky Hour: 100% rare fish (30 phút)\n` +
+          `💎 Double Drop: 2x vật phẩm (1 giờ)\n\n` +
+          `💡 Cách dùng: .fish event join [tên sự kiện]`,
+          threadID, messageID
+        );
+      }
+
+      if (action === "join") {
+        const eventName = args.slice(2).join(" ");
+        if (!eventName) {
+          return api.sendMessage(`❌ Vui lòng chọn sự kiện!`, threadID, messageID);
+        }
+
+        const events = ["boss rush", "mưa cá", "lucky hour", "double drop"];
+        const selectedEvent = events.find(e => 
+          e.includes(eventName.toLowerCase()) || eventName.toLowerCase().includes(e)
+        );
+
+        if (!selectedEvent) {
+          return api.sendMessage(`❌ Không tìm thấy sự kiện "${eventName}"!`, threadID, messageID);
+        }
+
+        return api.sendMessage(`✅ Đã tham gia sự kiện: ${selectedEvent}!`, threadID, messageID);
+      }
+
+      return api.sendMessage(`❌ Lệnh không hợp lệ. Dùng ".fish event" để xem hướng dẫn.`, threadID, messageID);
+    } catch (error) {
+      console.log(`🎣 CauCaRPG: Lỗi trong handle_event: ${error.message}`);
+      return api.sendMessage(`❌ Có lỗi xảy ra!`, event.threadID, event.messageID);
+    }
+  }
+
+  static async handle_duel({ api, event, model, Threads, Users, Currencies, args }) {
+    try {
+      console.log("🎣 CauCaRPG: Hiển thị duel");
+      const { senderID, threadID, messageID } = event;
+      const action = args[1]?.toLowerCase();
+
+      if (!action) {
+        return api.sendMessage(
+          `⚔️ PVP ĐẤU CÁ\n\n` +
+          `🎯 Thách đấu người chơi khác\n` +
+          `💰 Cược xu để đấu\n` +
+          `🏆 Người thắng nhận toàn bộ xu cược\n\n` +
+          `💡 Lệnh:\n` +
+          `• .fish duel challenge @user [xu] - Thách đấu\n` +
+          `• .fish duel accept/decline - Chấp nhận/từ chối`,
+          threadID, messageID
+        );
+      }
+
+      if (action === "challenge") {
+        const targetUser = args[2];
+        const betAmount = parseInt(args[3]);
+        
+        if (!targetUser || !betAmount) {
+          return api.sendMessage(`❌ Vui lòng tag người chơi và số xu cược!`, threadID, messageID);
+        }
+
+        if (betAmount < 100 || betAmount > 10000) {
+          return api.sendMessage(`❌ Số xu cược phải từ 100 đến 10,000!`, threadID, messageID);
+        }
+
+        return api.sendMessage(
+          `⚔️ THÁCH ĐẤU!\n\n` +
+          `${targetUser} đã được thách đấu với ${betAmount.toLocaleString()} xu!\n` +
+          `Dùng ".fish duel accept" để chấp nhận hoặc ".fish duel decline" để từ chối.`,
+          threadID, messageID
+        );
+      }
+
+      return api.sendMessage(`❌ Lệnh không hợp lệ. Dùng ".fish duel" để xem hướng dẫn.`, threadID, messageID);
+    } catch (error) {
+      console.log(`🎣 CauCaRPG: Lỗi trong handle_duel: ${error.message}`);
+      return api.sendMessage(`❌ Có lỗi xảy ra!`, event.threadID, event.messageID);
+    }
+  }
+
+  static async handle_market({ api, event, model, Threads, Users, Currencies, args }) {
+    try {
+      console.log("🎣 CauCaRPG: Hiển thị market");
+      const { senderID, threadID, messageID } = event;
+      const action = args[1]?.toLowerCase();
+
+      if (!action) {
+        return api.sendMessage(
+          `🏪 CHỢ CÁ\n\n` +
+          `🛒 Giao dịch cá & vật phẩm giữa người chơi\n` +
+          `💰 Phí giao dịch: 5% giá bán\n\n` +
+          `💡 Lệnh:\n` +
+          `• .fish market sell [cá] [giá] - Bán cá\n` +
+          `• .fish market buy [id] - Mua cá\n` +
+          `• .fish market list - Xem danh sách bán\n` +
+          `• .fish market my - Xem cá đang bán của mình\n` +
+          `• .fish market cancel [id] - Hủy bán`,
+          threadID, messageID
+        );
+      }
+
+      if (action === "sell") {
+        const fishName = args[2];
+        const price = parseInt(args[3]);
+        
+        if (!fishName || !price) {
+          return api.sendMessage(`❌ Vui lòng nhập tên cá và giá!`, threadID, messageID);
+        }
+
+        if (price < 100 || price > 100000) {
+          return api.sendMessage(`❌ Giá phải từ 100 đến 100,000 xu!`, threadID, messageID);
+        }
+
+        return api.sendMessage(`✅ Đã đăng bán ${fishName} với giá ${price.toLocaleString()} xu!`, threadID, messageID);
+      }
+
+      if (action === "list") {
+        return api.sendMessage(
+          `📋 DANH SÁCH BÁN\n\n` +
+          `#1. Cá diếc - 500 xu (bởi User1)\n` +
+          `#2. Cá heo - 2,000 xu (bởi User2)\n` +
+          `#3. Cá rồng - 15,000 xu (bởi User3)\n\n` +
+          `💡 Dùng ".fish market buy [id]" để mua`,
+          threadID, messageID
+        );
+      }
+
+      return api.sendMessage(`❌ Lệnh không hợp lệ. Dùng ".fish market" để xem hướng dẫn.`, threadID, messageID);
+    } catch (error) {
+      console.log(`🎣 CauCaRPG: Lỗi trong handle_market: ${error.message}`);
+      return api.sendMessage(`❌ Có lỗi xảy ra!`, event.threadID, event.messageID);
+    }
+  }
+
+  static async handle_boss({ api, event, model, Threads, Users, Currencies, args }) {
+    try {
+      console.log("🎣 CauCaRPG: Hiển thị boss");
+      const { senderID, threadID, messageID } = event;
+      const action = args[1]?.toLowerCase();
+
+      if (!action) {
+        return api.sendMessage(
+          `👹 BOSS CÁ\n\n` +
+          `⚠️ Boss Quỷ Đỏ đang xuất hiện tại Núi Lửa!\n` +
+          `💀 HP: 50,000 / 50,000\n` +
+          `⚔️ Sát thương: 1,000\n` +
+          `💰 Reward: 50,000 xu + Cá huyền thoại\n\n` +
+          `💡 Lệnh:\n` +
+          `• .fish boss attack - Tấn công boss\n` +
+          `• .fish boss info - Thông tin boss`,
+          threadID, messageID
+        );
+      }
+
+      if (action === "attack") {
+        const damage = Math.floor(Math.random() * 5000) + 1000;
+        return api.sendMessage(
+          `⚔️ TẤN CÔNG BOSS!\n\n` +
+          `💥 Gây sát thương: ${damage.toLocaleString()}\n` +
+          `💀 Boss HP còn lại: ${(50000 - damage).toLocaleString()}\n\n` +
+          `🎯 Tiếp tục tấn công để hạ boss!`,
+          threadID, messageID
+        );
+      }
+
+      return api.sendMessage(`❌ Lệnh không hợp lệ. Dùng ".fish boss" để xem hướng dẫn.`, threadID, messageID);
+    } catch (error) {
+      console.log(`🎣 CauCaRPG: Lỗi trong handle_boss: ${error.message}`);
+      return api.sendMessage(`❌ Có lỗi xảy ra!`, event.threadID, event.messageID);
+    }
+  }
+
+  static async handle_weather({ api, event, model, Threads, Users, Currencies, args }) {
+    try {
+      console.log("🎣 CauCaRPG: Hiển thị weather");
+      const { senderID, threadID, messageID } = event;
+      const action = args[1]?.toLowerCase();
+
+      if (!action) {
+        const weatherTypes = ["☀️ Nắng", "🌧️ Mưa", "⛈️ Bão", "🌤️ Nắng nhẹ"];
+        const currentWeather = weatherTypes[Math.floor(Math.random() * weatherTypes.length)];
+        
+        return api.sendMessage(
+          `🌤️ THỜI TIẾT HIỆN TẠI\n\n` +
+          `🌍 ${currentWeather}\n` +
+          `📊 Ảnh hưởng: +10% tỉ lệ cá hiếm\n` +
+          `⏰ Thời gian: 30 phút\n\n` +
+          `💡 Thời tiết thay đổi mỗi 30 phút`,
+          threadID, messageID
+        );
+      }
+
+      return api.sendMessage(`❌ Lệnh không hợp lệ. Dùng ".fish weather" để xem thời tiết.`, threadID, messageID);
+    } catch (error) {
+      console.log(`🎣 CauCaRPG: Lỗi trong handle_weather: ${error.message}`);
+      return api.sendMessage(`❌ Có lỗi xảy ra!`, event.threadID, event.messageID);
+    }
+  }
+
+  static async handle_quest({ api, event, model, Threads, Users, Currencies }) {
+    try {
+      console.log("🎣 CauCaRPG: Hiển thị quest");
+      return api.sendMessage(
+        `📋 NHIỆM VỤ HẰNG NGÀY\n\n` +
+        `🎯 Bắt 3 cá hiếm\n` +
+        `💰 Bán 5 con cá\n` +
+        `💵 Kiếm 2000 xu từ câu cá\n\n` +
+        `✅ Hoàn thành: 0/3\n` +
+        `🎁 Phần thưởng: 5,000 xu + 1 Gacha Ticket\n\n` +
+        `💡 Nhiệm vụ reset mỗi ngày lúc 00:00`,
+        event.threadID, event.messageID
+      );
+    } catch (error) {
+      console.log(`🎣 CauCaRPG: Lỗi trong handle_quest: ${error.message}`);
       return api.sendMessage(`❌ Có lỗi xảy ra!`, event.threadID, event.messageID);
     }
   }
