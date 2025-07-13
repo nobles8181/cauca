@@ -48,23 +48,23 @@ module.exports = class {
     }
 
     switch (input) {
-      case "cauca": return this.handle_cauca({ api, event });
-      case "info": return this.handle_info({ api, event, Users });
-      case "inv": return this.handle_inv({ api, event });
-      case "shop": return this.handle_shop({ api, event });
-      case "craft": return this.handle_craft({ api, event });
-      case "upgrade": return this.handle_upgrade({ api, event });
-      case "bait": return this.handle_bait({ api, event });
-      case "dex": return this.handle_dex({ api, event });
-      case "sell": return this.handle_sell({ api, event });
-      case "khu": return this.handle_khu({ api, event });
-      case "duel": return this.handle_duel({ api, event });
-      case "boss": return this.handle_boss({ api, event });
-      case "hire": return this.handle_hire({ api, event });
-      case "market": return this.handle_market({ api, event });
-      case "quest": return this.handle_quest({ api, event });
-      case "top": return this.handle_top({ api, event });
-      case "line": return this.handle_line({ api, event });
+      case "cauca": return this.handle_cauca({ api, event, model, Threads, Users, Currencies });
+      case "info": return this.handle_info({ api, event, model, Threads, Users, Currencies });
+      case "inv": return this.handle_inv({ api, event, model, Threads, Users, Currencies });
+      case "shop": return this.handle_shop({ api, event, model, Threads, Users, Currencies });
+      case "craft": return this.handle_craft({ api, event, model, Threads, Users, Currencies });
+      case "upgrade": return this.handle_upgrade({ api, event, model, Threads, Users, Currencies });
+      case "bait": return this.handle_bait({ api, event, model, Threads, Users, Currencies });
+      case "dex": return this.handle_dex({ api, event, model, Threads, Users, Currencies });
+      case "sell": return this.handle_sell({ api, event, model, Threads, Users, Currencies });
+      case "khu": return this.handle_khu({ api, event, model, Threads, Users, Currencies });
+      case "duel": return this.handle_duel({ api, event, model, Threads, Users, Currencies });
+      case "boss": return this.handle_boss({ api, event, model, Threads, Users, Currencies });
+      case "hire": return this.handle_hire({ api, event, model, Threads, Users, Currencies });
+      case "market": return this.handle_market({ api, event, model, Threads, Users, Currencies });
+      case "quest": return this.handle_quest({ api, event, model, Threads, Users, Currencies });
+      case "top": return this.handle_top({ api, event, model, Threads, Users, Currencies });
+      case "line": return this.handle_line({ api, event, model, Threads, Users, Currencies });
       default:
         return api.sendMessage(
           `⚠️ Lệnh không hợp lệ. Gõ ".fish" để xem menu.`, threadID, messageID
