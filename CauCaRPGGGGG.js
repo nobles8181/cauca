@@ -628,7 +628,16 @@ module.exports = class {
     try {
       console.log("🎣 CauCaRPG: Hiển thị thông tin");
       const data = JSON.parse(fs.readFileSync(`system/data/fishing/${event.senderID}.json`));
-      const name = (await Users.getName(event.senderID)) || data.name;
+      let name = data.name;
+      
+      try {
+        if (Users && typeof Users.getName === 'function') {
+          name = await Users.getName(event.senderID) || data.name;
+        }
+      } catch (error) {
+        console.log(`🎣 CauCaRPG: Lỗi lấy tên user: ${error.message}`);
+        name = data.name;
+      }
 
       const infoMsg =
         `📄 THÔNG TIN NGƯ DÂN\n\n` +
@@ -1028,6 +1037,10 @@ module.exports = class {
       // Bán từng loại cá
       const fishName = args[1];
       const amount = parseInt(args[2]) || 1;
+
+      if (!fishName) {
+        return api.sendMessage(`❌ Vui lòng nhập tên cá muốn bán!`, threadID, messageID);
+      }
 
       if (!data.fish[fishName] || data.fish[fishName] < amount) {
         return api.sendMessage(`❌ Bạn không đủ ${fishName} để bán!`, threadID, messageID);
