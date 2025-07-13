@@ -269,30 +269,6 @@ module.exports = class {
         case "reset": 
           console.log("🎣 CauCaRPG: Gọi handle_reset");
           return this.handle_reset({ api, event, model, Threads, Users, Currencies });
-        case "backup": 
-          console.log("🎣 CauCaRPG: Gọi handle_backup");
-          return this.handle_backup({ api, event, model, Threads, Users, Currencies });
-        case "restore": 
-          console.log("🎣 CauCaRPG: Gọi handle_restore");
-          return this.handle_restore({ api, event, model, Threads, Users, Currencies });
-        case "version": 
-          console.log("🎣 CauCaRPG: Gọi handle_version");
-          return this.handle_version({ api, event, model, Threads, Users, Currencies });
-        case "credits": 
-          console.log("🎣 CauCaRPG: Gọi handle_credits");
-          return this.handle_credits({ api, event, model, Threads, Users, Currencies });
-        case "donate": 
-          console.log("🎣 CauCaRPG: Gọi handle_donate");
-          return this.handle_donate({ api, event, model, Threads, Users, Currencies });
-        case "support": 
-          console.log("🎣 CauCaRPG: Gọi handle_support");
-          return this.handle_support({ api, event, model, Threads, Users, Currencies });
-        case "bug": 
-          console.log("🎣 CauCaRPG: Gọi handle_bug");
-          return this.handle_bug({ api, event, model, Threads, Users, Currencies, args });
-        case "suggest": 
-          console.log("🎣 CauCaRPG: Gọi handle_suggest");
-          return this.handle_suggest({ api, event, model, Threads, Users, Currencies, args });
         default:
           console.log(`🎣 CauCaRPG: Lệnh không hợp lệ: ${input}`);
           return api.sendMessage(
