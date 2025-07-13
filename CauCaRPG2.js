@@ -1474,13 +1474,13 @@ module.exports = class {
 
       if (!action) {
         const hireList = [
-          { name: "Ngư dân tập sự", cost: 1000, duration: 30, efficiency: 1, description: "Câu cá cơ bản trong 30 phút" },
-          { name: "Ngư dân chuyên", cost: 3000, duration: 60, efficiency: 2, description: "Câu cá hiệu quả trong 1 giờ" },
-          { name: "Ngư dân bậc thầy", cost: 8000, duration: 120, efficiency: 3, description: "Câu cá chuyên nghiệp trong 2 giờ" }
+          { id: 1, name: "Ngư dân tập sự", cost: 1000, duration: 30, efficiency: 1, description: "Câu cá cơ bản trong 30 phút" },
+          { id: 2, name: "Ngư dân chuyên", cost: 3000, duration: 60, efficiency: 2, description: "Câu cá hiệu quả trong 1 giờ" },
+          { id: 3, name: "Ngư dân bậc thầy", cost: 8000, duration: 120, efficiency: 3, description: "Câu cá chuyên nghiệp trong 2 giờ" }
         ];
 
         const hireMsg = hireList.map(hire => 
-          `🧑‍🌾 ${hire.name}\n` +
+          `#${hire.id} 🧑‍🌾 ${hire.name}\n` +
           `💰 Giá: ${hire.cost.toLocaleString()} xu\n` +
           `⏰ Thời gian: ${hire.duration} phút\n` +
           `⚡ Hiệu suất: ${hire.efficiency}x\n` +
@@ -1493,9 +1493,10 @@ module.exports = class {
           `⏰ Đang thuê: ${data.hire?.active ? `${data.hire.fisher} (${data.hire.timeLeft} phút)` : "Không có"}\n\n` +
           `📋 DANH SÁCH NGƯ DÂN:\n${hireMsg}\n` +
           `💡 Lệnh:\n` +
-          `• .fish hire [tên] - Thuê ngư dân\n` +
+          `• .fish hire [số] - Thuê ngư dân theo STT\n` +
           `• .fish hire status - Xem trạng thái\n` +
-          `• .fish hire fire - Sa thải ngư dân`,
+          `• .fish hire fire - Sa thải ngư dân\n` +
+          `• .fish hire collect - Thu thập cá`,
           threadID, messageID
         );
       }
@@ -1505,11 +1506,17 @@ module.exports = class {
           return api.sendMessage(`❌ Bạn chưa thuê ngư dân nào!`, threadID, messageID);
         }
 
+        const progress = Math.floor(((data.hire.duration - data.hire.timeLeft) / data.hire.duration) * 100);
+        const progressBar = "█".repeat(Math.floor(progress / 10)) + "░".repeat(10 - Math.floor(progress / 10));
+        
         return api.sendMessage(
           `📊 TRẠNG THÁI NGƯ DÂN\n\n` +
           `🧑‍🌾 ${data.hire.fisher}\n` +
           `⏰ Thời gian còn lại: ${data.hire.timeLeft} phút\n` +
-          `⚡ Hiệu suất: ${data.hire.efficiency}x`,
+          `⚡ Hiệu suất: ${data.hire.efficiency}x\n` +
+          `🐟 Cá đã câu: ${data.hire.fishCaught || 0} con\n` +
+          `💰 Xu kiếm được: ${data.hire.xuEarned || 0} xu\n` +
+          `📊 Tiến độ: ${progressBar} ${progress}%`,
           threadID, messageID
         );
       }
@@ -1524,27 +1531,67 @@ module.exports = class {
         return api.sendMessage(`✅ Đã sa thải ngư dân!`, threadID, messageID);
       }
 
-      const fisherName = args.slice(1).join(" ");
-      if (!fisherName) {
+      if (action === "collect") {
+        if (!data.hire?.active) {
+          return api.sendMessage(`❌ Bạn chưa thuê ngư dân nào!`, threadID, messageID);
+        }
+
+        if (data.hire.timeLeft > 0) {
+          return api.sendMessage(`❌ Ngư dân vẫn đang làm việc! Còn ${data.hire.timeLeft} phút.`, threadID, messageID);
+        }
+
+        const fishCaught = data.hire.fishCaught || 0;
+        const xuEarned = data.hire.xuEarned || 0;
+        const efficiency = data.hire.efficiency;
+
+        // Thông báo kết quả
+        const resultMsg = 
+          `🎣 KẾT QUẢ CÂU CÁ\n\n` +
+          `🧑‍🌾 ${data.hire.fisher}\n` +
+          `🐟 Cá đã câu: ${fishCaught} con\n` +
+          `💰 Xu kiếm được: ${xuEarned.toLocaleString()} xu\n` +
+          `⚡ Hiệu suất: ${efficiency}x\n\n` +
+          `✅ Đã thu thập thành công!`;
+
+        // Reset hire data
+        delete data.hire;
+        fs.writeFileSync(userFile, JSON.stringify(data, null, 2));
+
+        return api.sendMessage(resultMsg, threadID, messageID);
+      }
+
+      const fisherInput = args.slice(1).join(" ");
+      if (!fisherInput) {
         return api.sendMessage(`❌ Vui lòng chọn ngư dân để thuê!`, threadID, messageID);
       }
 
-      const hireOptions = {
-        "ngư dân tập sự": { cost: 1000, duration: 30, efficiency: 1 },
-        "ngư dân chuyên": { cost: 3000, duration: 60, efficiency: 2 },
-        "ngư dân bậc thầy": { cost: 8000, duration: 120, efficiency: 3 }
-      };
+      const hireOptions = [
+        { id: 1, name: "Ngư dân tập sự", cost: 1000, duration: 30, efficiency: 1 },
+        { id: 2, name: "Ngư dân chuyên", cost: 3000, duration: 60, efficiency: 2 },
+        { id: 3, name: "Ngư dân bậc thầy", cost: 8000, duration: 120, efficiency: 3 }
+      ];
 
-      const selectedFisher = Object.entries(hireOptions).find(([name, _]) => 
-        name.toLowerCase().includes(fisherName.toLowerCase()) ||
-        fisherName.toLowerCase().includes(name.toLowerCase())
-      );
-
-      if (!selectedFisher) {
-        return api.sendMessage(`❌ Không tìm thấy ngư dân "${fisherName}"!`, threadID, messageID);
+      // Kiểm tra nếu người dùng nhập số
+      const fisherId = parseInt(fisherInput);
+      let selectedFisher;
+      
+      if (!isNaN(fisherId)) {
+        // Tìm theo ID
+        selectedFisher = hireOptions.find(fisher => fisher.id === fisherId);
+      } else {
+        // Tìm theo tên
+        selectedFisher = hireOptions.find(fisher => 
+          fisher.name.toLowerCase().includes(fisherInput.toLowerCase()) ||
+          fisherInput.toLowerCase().includes(fisher.name.toLowerCase())
+        );
       }
 
-      const [fisherName_, fisherData] = selectedFisher;
+      if (!selectedFisher) {
+        return api.sendMessage(`❌ Không tìm thấy ngư dân "${fisherInput}"!`, threadID, messageID);
+      }
+
+      const fisherName_ = selectedFisher.name;
+      const fisherData = selectedFisher;
 
       if (data.xu < fisherData.cost) {
         return api.sendMessage(`❌ Bạn không đủ xu! Cần ${fisherData.cost.toLocaleString()} xu.`, threadID, messageID);
@@ -2571,7 +2618,63 @@ module.exports = class {
   }
 
   static async onEvent({ api, event, model, Threads, Users, Currencies }) {
-    // Có thể xử lý sự kiện tin nhắn nếu cần
+    try {
+      // Xử lý tự động câu cá cho ngư dân thuê
+      const dir = "system/data/fishing";
+      if (!fs.existsSync(dir)) return;
+      
+      const files = fs.readdirSync(dir).filter(f => f.endsWith(".json"));
+      
+      for (const file of files) {
+        try {
+          const userFile = `${dir}/${file}`;
+          const data = JSON.parse(fs.readFileSync(userFile));
+          
+          // Kiểm tra nếu có ngư dân đang làm việc
+          if (data.hire?.active && data.hire.timeLeft > 0) {
+            // Giảm thời gian
+            data.hire.timeLeft -= 1;
+            
+            // Mỗi 5 phút câu được cá
+            if (data.hire.timeLeft % 5 === 0) {
+              const fishCaught = Math.floor(Math.random() * 3) + 1; // 1-3 con cá
+              const xuEarned = fishCaught * 100 * data.hire.efficiency; // Xu kiếm được
+              
+              // Cập nhật số liệu
+              data.hire.fishCaught = (data.hire.fishCaught || 0) + fishCaught;
+              data.hire.xuEarned = (data.hire.xuEarned || 0) + xuEarned;
+              data.xu += xuEarned;
+              
+              // Thêm cá vào inventory (ngẫu nhiên)
+              const fishList = [
+                { name: "Cá diếc", rarity: "common", value: 300 },
+                { name: "Cá lóc", rarity: "common", value: 400 },
+                { name: "Cá heo", rarity: "rare", value: 1500 },
+                { name: "Cá mập", rarity: "legendary", value: 6000 }
+              ];
+              
+              for (let i = 0; i < fishCaught; i++) {
+                const randomFish = fishList[Math.floor(Math.random() * fishList.length)];
+                data.fish[randomFish.name] = (data.fish[randomFish.name] || 0) + 1;
+              }
+            }
+            
+            // Nếu hết thời gian
+            if (data.hire.timeLeft <= 0) {
+              data.hire.timeLeft = 0;
+              data.hire.active = false;
+            }
+            
+            // Lưu dữ liệu
+            fs.writeFileSync(userFile, JSON.stringify(data, null, 2));
+          }
+        } catch (error) {
+          console.log(`Error updating hire data for ${file}:`, error);
+        }
+      }
+    } catch (error) {
+      console.log("Error in onEvent:", error);
+    }
   }
 
   static async onReply({ api, event, model, Threads, Users, Currencies, onReply }) {
