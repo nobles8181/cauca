@@ -122,10 +122,6 @@ module.exports = class {
         `• .fish boss - Boss cá\n` +
         `• .fish weather - Thời tiết\n` +
         `• .fish quest - Nhiệm vụ\n\n` +
-        `� DAILY & REWARDS:\n` +
-        `• .fish daily - Phần thưởng hàng ngày\n` +
-        `• .fish weekly - Phần thưởng hàng tuần\n` +
-        `• .fish monthly - Phần thưởng hàng tháng\n\n` +
         `🎁 SOCIAL & SYSTEM:\n` +
         `• .fish help - Hướng dẫn chi tiết\n` +
         `• .fish gift - Tặng quà\n` +
@@ -139,15 +135,8 @@ module.exports = class {
         `• .fish profile - Hồ sơ\n` +
         `• .fish settings - Cài đặt\n` +
         `• .fish reset - Reset dữ liệu\n` +
-        `• .fish backup - Sao lưu\n` +
-        `• .fish restore - Khôi phục\n` +
-        `• .fish version - Phiên bản\n` +
-        `• .fish credits - Tác giả\n` +
-        `• .fish donate - Ủng hộ\n` +
-        `• .fish support - Hỗ trợ\n` +
-        `• .fish bug - Báo lỗi\n` +
-        `• .fish suggest - Đề xuất\n\n` +
-        `�💡 Tổng cộng: 33 lệnh! Gõ ".fish [lệnh]" để sử dụng`,
+        `• .fish version - Phiên bản\n\n` +
+        `💡 Tổng cộng: 25 lệnh! Gõ ".fish [lệnh]" để sử dụng`,
           threadID, messageID
         );
       }
@@ -227,15 +216,7 @@ module.exports = class {
         case "help": 
           console.log("🎣 CauCaRPG: Gọi handle_help");
           return this.handle_help({ api, event, model, Threads, Users, Currencies });
-        case "daily": 
-          console.log("🎣 CauCaRPG: Gọi handle_daily");
-          return this.handle_daily({ api, event, model, Threads, Users, Currencies });
-        case "weekly": 
-          console.log("🎣 CauCaRPG: Gọi handle_weekly");
-          return this.handle_weekly({ api, event, model, Threads, Users, Currencies });
-        case "monthly": 
-          console.log("🎣 CauCaRPG: Gọi handle_monthly");
-          return this.handle_monthly({ api, event, model, Threads, Users, Currencies });
+
         case "gift": 
           console.log("🎣 CauCaRPG: Gọi handle_gift");
           return this.handle_gift({ api, event, model, Threads, Users, Currencies, args });
@@ -269,6 +250,9 @@ module.exports = class {
         case "reset": 
           console.log("🎣 CauCaRPG: Gọi handle_reset");
           return this.handle_reset({ api, event, model, Threads, Users, Currencies });
+        case "version": 
+          console.log("🎣 CauCaRPG: Gọi handle_version");
+          return this.handle_version({ api, event, model, Threads, Users, Currencies });
         default:
           console.log(`🎣 CauCaRPG: Lệnh không hợp lệ: ${input}`);
           return api.sendMessage(
@@ -2097,97 +2081,7 @@ module.exports = class {
     }
   }
 
-  static async handle_daily({ api, event, model, Threads, Users, Currencies }) {
-    try {
-      console.log("🎣 CauCaRPG: Xử lý daily reward");
-      const { senderID, threadID, messageID } = event;
-      const userFile = `system/data/fishing/${senderID}.json`;
-      const data = JSON.parse(fs.readFileSync(userFile));
-      
-      // Kiểm tra đã nhận daily chưa
-      const today = new Date().toDateString();
-      if (data.lastDaily === today) {
-        return api.sendMessage(`❌ Bạn đã nhận phần thưởng hôm nay rồi!`, threadID, messageID);
-      }
-      
-      // Phần thưởng daily
-      const reward = 1000 + (data.level * 100);
-      data.xu += reward;
-      data.lastDaily = today;
-      fs.writeFileSync(userFile, JSON.stringify(data, null, 2));
-      
-      return api.sendMessage(
-        `🎁 PHẦN THƯỞNG HÀNG NGÀY\n\n` +
-        `💰 Nhận được: ${reward.toLocaleString()} xu\n` +
-        `💳 Số dư: ${data.xu.toLocaleString()} xu\n\n` +
-        `⏰ Quay lại vào ngày mai!`,
-        threadID, messageID
-      );
-    } catch (error) {
-      console.log(`🎣 CauCaRPG: Lỗi trong handle_daily: ${error.message}`);
-      return api.sendMessage(`❌ Có lỗi xảy ra!`, event.threadID, event.messageID);
-    }
-  }
 
-  static async handle_weekly({ api, event, model, Threads, Users, Currencies }) {
-    try {
-      console.log("🎣 CauCaRPG: Xử lý weekly reward");
-      const { senderID, threadID, messageID } = event;
-      const userFile = `system/data/fishing/${senderID}.json`;
-      const data = JSON.parse(fs.readFileSync(userFile));
-      
-      const thisWeek = new Date().getWeek();
-      if (data.lastWeekly === thisWeek) {
-        return api.sendMessage(`❌ Bạn đã nhận phần thưởng tuần này rồi!`, threadID, messageID);
-      }
-      
-      const reward = 5000 + (data.level * 500);
-      data.xu += reward;
-      data.lastWeekly = thisWeek;
-      fs.writeFileSync(userFile, JSON.stringify(data, null, 2));
-      
-      return api.sendMessage(
-        `🎁 PHẦN THƯỞNG HÀNG TUẦN\n\n` +
-        `💰 Nhận được: ${reward.toLocaleString()} xu\n` +
-        `💳 Số dư: ${data.xu.toLocaleString()} xu\n\n` +
-        `⏰ Quay lại vào tuần sau!`,
-        threadID, messageID
-      );
-    } catch (error) {
-      console.log(`🎣 CauCaRPG: Lỗi trong handle_weekly: ${error.message}`);
-      return api.sendMessage(`❌ Có lỗi xảy ra!`, event.threadID, event.messageID);
-    }
-  }
-
-  static async handle_monthly({ api, event, model, Threads, Users, Currencies }) {
-    try {
-      console.log("🎣 CauCaRPG: Xử lý monthly reward");
-      const { senderID, threadID, messageID } = event;
-      const userFile = `system/data/fishing/${senderID}.json`;
-      const data = JSON.parse(fs.readFileSync(userFile));
-      
-      const thisMonth = new Date().getMonth();
-      if (data.lastMonthly === thisMonth) {
-        return api.sendMessage(`❌ Bạn đã nhận phần thưởng tháng này rồi!`, threadID, messageID);
-      }
-      
-      const reward = 20000 + (data.level * 2000);
-      data.xu += reward;
-      data.lastMonthly = thisMonth;
-      fs.writeFileSync(userFile, JSON.stringify(data, null, 2));
-      
-      return api.sendMessage(
-        `🎁 PHẦN THƯỞNG HÀNG THÁNG\n\n` +
-        `💰 Nhận được: ${reward.toLocaleString()} xu\n` +
-        `💳 Số dư: ${data.xu.toLocaleString()} xu\n\n` +
-        `⏰ Quay lại vào tháng sau!`,
-        threadID, messageID
-      );
-    } catch (error) {
-      console.log(`🎣 CauCaRPG: Lỗi trong handle_monthly: ${error.message}`);
-      return api.sendMessage(`❌ Có lỗi xảy ra!`, event.threadID, event.messageID);
-    }
-  }
 
   static async handle_gift({ api, event, model, Threads, Users, Currencies, args }) {
     try {
@@ -2456,44 +2350,6 @@ module.exports = class {
     }
   }
 
-  static async handle_backup({ api, event, model, Threads, Users, Currencies }) {
-    try {
-      console.log("🎣 CauCaRPG: Xử lý backup");
-      const { senderID, threadID, messageID } = event;
-      
-      return api.sendMessage(
-        `💾 SAO LƯU DỮ LIỆU\n\n` +
-        `✅ Dữ liệu đã được sao lưu\n` +
-        `📁 Vị trí: system/backup/fishing/\n` +
-        `📅 Ngày: ${new Date().toLocaleDateString()}\n\n` +
-        `💡 Dùng ".fish restore" để khôi phục`,
-        threadID, messageID
-      );
-    } catch (error) {
-      console.log(`🎣 CauCaRPG: Lỗi trong handle_backup: ${error.message}`);
-      return api.sendMessage(`❌ Có lỗi xảy ra!`, event.threadID, event.messageID);
-    }
-  }
-
-  static async handle_restore({ api, event, model, Threads, Users, Currencies }) {
-    try {
-      console.log("🎣 CauCaRPG: Xử lý restore");
-      const { senderID, threadID, messageID } = event;
-      
-      return api.sendMessage(
-        `🔄 KHÔI PHỤC DỮ LIỆU\n\n` +
-        `✅ Dữ liệu đã được khôi phục\n` +
-        `📁 Từ: system/backup/fishing/\n` +
-        `📅 Ngày: ${new Date().toLocaleDateString()}\n\n` +
-        `💡 Dữ liệu đã được cập nhật`,
-        threadID, messageID
-      );
-    } catch (error) {
-      console.log(`🎣 CauCaRPG: Lỗi trong handle_restore: ${error.message}`);
-      return api.sendMessage(`❌ Có lỗi xảy ra!`, event.threadID, event.messageID);
-    }
-  }
-
   static async handle_version({ api, event, model, Threads, Users, Currencies }) {
     try {
       console.log("🎣 CauCaRPG: Xử lý version");
@@ -2502,7 +2358,7 @@ module.exports = class {
         `🎣 CauCaRPG v1.0.0\n` +
         `📅 Ngày phát hành: 01/01/2024\n` +
         `👨‍💻 Tác giả: Panna\n` +
-        `🔧 Tính năng: 33 lệnh\n` +
+        `🔧 Tính năng: 25 lệnh\n` +
         `🐛 Bug fixes: 15\n` +
         `✨ Tính năng mới: 10\n\n` +
         `💡 Phiên bản ổn định`,
@@ -2510,123 +2366,6 @@ module.exports = class {
       );
     } catch (error) {
       console.log(`🎣 CauCaRPG: Lỗi trong handle_version: ${error.message}`);
-      return api.sendMessage(`❌ Có lỗi xảy ra!`, event.threadID, event.messageID);
-    }
-  }
-
-  static async handle_credits({ api, event, model, Threads, Users, Currencies }) {
-    try {
-      console.log("🎣 CauCaRPG: Xử lý credits");
-      return api.sendMessage(
-        `👨‍💻 THÔNG TIN TÁC GIẢ\n\n` +
-        `🎣 CauCaRPG\n` +
-        `👤 Tác giả: Panna\n` +
-        `📧 Email: panna@example.com\n` +
-        `🌐 Website: example.com\n` +
-        `📱 Facebook: fb.com/panna\n\n` +
-        `🙏 Cảm ơn bạn đã sử dụng game!`,
-        event.threadID, event.messageID
-      );
-    } catch (error) {
-      console.log(`🎣 CauCaRPG: Lỗi trong handle_credits: ${error.message}`);
-      return api.sendMessage(`❌ Có lỗi xảy ra!`, event.threadID, event.messageID);
-    }
-  }
-
-  static async handle_donate({ api, event, model, Threads, Users, Currencies }) {
-    try {
-      console.log("🎣 CauCaRPG: Xử lý donate");
-      return api.sendMessage(
-        `💝 ỦNG HỘ TÁC GIẢ\n\n` +
-        `🎣 CauCaRPG được phát triển miễn phí\n` +
-        `💝 Nếu bạn thích game, hãy ủng hộ:\n\n` +
-        `💰 MOMO: 0123456789\n` +
-        `🏦 Vietcombank: 1234567890\n` +
-        `💳 PayPal: panna@example.com\n\n` +
-        `🙏 Cảm ơn sự ủng hộ của bạn!`,
-        event.threadID, event.messageID
-      );
-    } catch (error) {
-      console.log(`🎣 CauCaRPG: Lỗi trong handle_donate: ${error.message}`);
-      return api.sendMessage(`❌ Có lỗi xảy ra!`, event.threadID, event.messageID);
-    }
-  }
-
-  static async handle_support({ api, event, model, Threads, Users, Currencies }) {
-    try {
-      console.log("🎣 CauCaRPG: Xử lý support");
-      return api.sendMessage(
-        `🆘 HỖ TRỢ\n\n` +
-        `📞 Liên hệ hỗ trợ:\n` +
-        `📧 Email: support@example.com\n` +
-        `📱 Facebook: fb.com/support\n` +
-        `💬 Discord: discord.gg/support\n\n` +
-        `⏰ Thời gian: 24/7\n` +
-        `🌍 Ngôn ngữ: Tiếng Việt, English`,
-        event.threadID, event.messageID
-      );
-    } catch (error) {
-      console.log(`🎣 CauCaRPG: Lỗi trong handle_support: ${error.message}`);
-      return api.sendMessage(`❌ Có lỗi xảy ra!`, event.threadID, event.messageID);
-    }
-  }
-
-  static async handle_bug({ api, event, model, Threads, Users, Currencies, args }) {
-    try {
-      console.log("🎣 CauCaRPG: Xử lý bug report");
-      const { senderID, threadID, messageID } = event;
-      const bugDescription = args.slice(1).join(' ');
-      
-      if (!bugDescription) {
-        return api.sendMessage(
-          `🐛 BÁO LỖI\n\n` +
-          `💡 Lệnh: .fish bug [mô tả lỗi]\n` +
-          `📝 Ví dụ: .fish bug Lệnh cauca không hoạt động\n\n` +
-          `📧 Hoặc gửi email: bug@example.com`,
-          threadID, messageID
-        );
-      }
-      
-      return api.sendMessage(
-        `✅ BÁO LỖI THÀNH CÔNG!\n\n` +
-        `🐛 Lỗi: ${bugDescription}\n` +
-        `👤 Người báo: ${senderID}\n` +
-        `📅 Thời gian: ${new Date().toLocaleString()}\n\n` +
-        `🙏 Cảm ơn bạn đã báo lỗi!`,
-        threadID, messageID
-      );
-    } catch (error) {
-      console.log(`🎣 CauCaRPG: Lỗi trong handle_bug: ${error.message}`);
-      return api.sendMessage(`❌ Có lỗi xảy ra!`, event.threadID, event.messageID);
-    }
-  }
-
-  static async handle_suggest({ api, event, model, Threads, Users, Currencies, args }) {
-    try {
-      console.log("🎣 CauCaRPG: Xử lý suggest");
-      const { senderID, threadID, messageID } = event;
-      const suggestion = args.slice(1).join(' ');
-      
-      if (!suggestion) {
-        return api.sendMessage(
-          `💡 ĐỀ XUẤT TÍNH NĂNG\n\n` +
-          `💡 Lệnh: .fish suggest [đề xuất]\n` +
-          `📝 Ví dụ: .fish suggest Thêm cá mới\n\n` +
-          `📧 Hoặc gửi email: suggest@example.com`,
-          threadID, messageID
-        );
-      }
-      
-      return api.sendMessage(
-        `✅ ĐỀ XUẤT THÀNH CÔNG!\n\n` +
-        `💡 Đề xuất: ${suggestion}\n` +
-        `👤 Người đề xuất: ${senderID}\n` +
-        `📅 Thời gian: ${new Date().toLocaleString()}\n\n` +
-        `🙏 Cảm ơn đề xuất của bạn!`,
-        threadID, messageID
-      );
-    } catch (error) {
-      console.log(`🎣 CauCaRPG: Lỗi trong handle_suggest: ${error.message}`);
       return api.sendMessage(`❌ Có lỗi xảy ra!`, event.threadID, event.messageID);
     }
   }
