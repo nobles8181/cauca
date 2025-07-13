@@ -402,20 +402,20 @@ module.exports = class {
         const shopMsg =
           `🛒 SHOP CÂU CÁ\n\n` +
           `🎣 CẦN CÂU:\n` +
-          `• (cango) Cần Gỗ - 0 xu (có sẵn)\n` +
-          `• (candong) Cần Đồng - 20,000 xu\n` +
-          `• (cansat) Cần Sắt - 50,000 xu\n` +
-          `• (canbac) Cần Bạc - 100,000 xu\n` +
-          `• (canvang) Cần Vàng - 200,000 xu\n\n` +
+          `1. Cần Gỗ - 0 xu (có sẵn)\n` +
+          `2. Cần Đồng - 20,000 xu\n` +
+          `3. Cần Sắt - 50,000 xu\n` +
+          `4. Cần Bạc - 100,000 xu\n` +
+          `5. Cần Vàng - 200,000 xu\n\n` +
           `🧵 DÂY CÂU:\n` +
-          `• (daythuong) Dây thường - 2,000 xu\n` +
-          `• (dayben) Dây bền - 5,000 xu\n` +
-          `• (daythep) Dây thép - 10,000 xu\n\n` +
+          `6. Dây thường - 2,000 xu\n` +
+          `7. Dây bền - 5,000 xu\n` +
+          `8. Dây thép - 10,000 xu\n\n` +
           `🪱 MỒI:\n` +
-          `• (moithuong) Mồi thường - 0 xu\n` +
-          `• (moithom) Mồi thơm - 8,000 xu\n` +
-          `• (moihiem) Mồi hiếm - 20,000 xu\n\n` +
-          `💡 Cách dùng: .fish shop buy [id] [số lượng]`;
+          `9. Mồi thường - 0 xu\n` +
+          `10. Mồi thơm - 8,000 xu\n` +
+          `11. Mồi hiếm - 20,000 xu\n\n` +
+          `💡 Cách dùng: .fish shop buy [số] [số lượng]`;
         return api.sendMessage(shopMsg, threadID, messageID);
       }
 
@@ -428,17 +428,17 @@ module.exports = class {
         }
 
         const shopItems = {
-          "cango": { price: 0, type: "rod", name: "Cần Gỗ", tier: 0 },
-          "candong": { price: 20000, type: "rod", name: "Cần Đồng", tier: 0 },
-          "cansat": { price: 50000, type: "rod", name: "Cần Sắt", tier: 0 },
-          "canbac": { price: 100000, type: "rod", name: "Cần Bạc", tier: 0 },
-          "canvang": { price: 200000, type: "rod", name: "Cần Vàng", tier: 0 },
-          "daythuong": { price: 2000, type: "line", name: "Dây thường", durability: 20, maxDurability: 20 },
-          "dayben": { price: 5000, type: "line", name: "Dây bền", durability: 40, maxDurability: 40 },
-          "daythep": { price: 10000, type: "line", name: "Dây thép", durability: 60, maxDurability: 60 },
-          "moithuong": { price: 0, type: "item", name: "Mồi thường" },
-          "moithom": { price: 8000, type: "item", name: "Mồi thơm" },
-          "moihiem": { price: 20000, type: "item", name: "Mồi hiếm" }
+          "1": { price: 0, type: "rod", name: "Cần Gỗ", tier: 0 },
+          "2": { price: 20000, type: "rod", name: "Cần Đồng", tier: 0 },
+          "3": { price: 50000, type: "rod", name: "Cần Sắt", tier: 0 },
+          "4": { price: 100000, type: "rod", name: "Cần Bạc", tier: 0 },
+          "5": { price: 200000, type: "rod", name: "Cần Vàng", tier: 0 },
+          "6": { price: 2000, type: "line", name: "Dây thường", durability: 20, maxDurability: 20 },
+          "7": { price: 5000, type: "line", name: "Dây bền", durability: 40, maxDurability: 40 },
+          "8": { price: 10000, type: "line", name: "Dây thép", durability: 60, maxDurability: 60 },
+          "9": { price: 0, type: "item", name: "Mồi thường" },
+          "10": { price: 8000, type: "item", name: "Mồi thơm" },
+          "11": { price: 20000, type: "item", name: "Mồi hiếm" }
         };
 
         const selectedItem = shopItems[item];
