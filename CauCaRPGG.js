@@ -346,8 +346,14 @@ module.exports = class {
 
       fs.writeFileSync(userFile, JSON.stringify(data, null, 2));
 
+      const rarityText = {
+        common: "THƯỜNG",
+        rare: "HIẾM", 
+        legendary: "HUYỀN THOẠI"
+      };
+      
       let fishMsg = `🎉 Bạn câu được ${fish.name}!\n` +
-        `(${fish.rarity.toUpperCase()} – ${emoji[fish.rarity]})\n` +
+        `(${rarityText[fish.rarity]} – ${emoji[fish.rarity]})\n` +
         `💰 +${finalValue.toLocaleString()} xu`;
       
       if (data.level > oldLevel) {
