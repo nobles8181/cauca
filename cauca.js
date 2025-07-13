@@ -11,10 +11,11 @@ module.exports = class {
     Category: "Game",
     guides: ".fish + lệnh (cauca/shop/info/khu/...)",
     cd: 5,
-    hasPrefix: true
+    hasPrefix: true,
+    images: []
   };
 
-  static async onRun({ api, event, args, Users }) {
+  static async onRun({ api, event, msg, model, Threads, Users, Currencies, args }) {
     const { threadID, senderID, messageID } = event;
     const input = args[0]?.toLowerCase();
 
@@ -71,7 +72,7 @@ module.exports = class {
     }
   }
 
-  static async handle_cauca({ api, event }) {
+  static async handle_cauca({ api, event, msg, model, Threads, Users, Currencies }) {
     const { senderID, threadID, messageID } = event;
     const userFile = `system/data/fishing/${senderID}.json`;
     const data = JSON.parse(fs.readFileSync(userFile));
@@ -118,15 +119,15 @@ module.exports = class {
 
     fs.writeFileSync(userFile, JSON.stringify(data, null, 2));
 
-    const msg =
+    const fishMsg =
       `${congrats[Math.floor(Math.random() * congrats.length)]}\n` +
       `(${fish.rarity.toUpperCase()} – ${emoji[fish.rarity]})\n` +
       `💰 +${fish.value.toLocaleString()} xu`;
 
-    return api.sendMessage(msg, threadID, messageID);
+    return api.sendMessage(fishMsg, threadID, messageID);
   }
-static async handle_shop({ api, event }) {
-    const msg =
+  static async handle_shop({ api, event, model, Threads, Users, Currencies }) {
+    const shopMsg =
       `🛒 SHOP CÂU CÁ\n\n` +
       `🎣 CẦN:\n` +
       `• Cần Gỗ (+0) - 0 xu (có sẵn)\n` +
@@ -141,10 +142,10 @@ static async handle_shop({ api, event }) {
       `• Mồi thường - 0 xu\n` +
       `• Mồi thơm - 800 xu\n` +
       `• Mồi hiếm - 2000 xu`;
-    return api.sendMessage(msg, event.threadID, event.messageID);
+    return api.sendMessage(shopMsg, event.threadID, event.messageID);
   }
 
-  static async handle_craft({ api, event }) {
+  static async handle_craft({ api, event, model, Threads, Users, Currencies }) {
     return api.sendMessage(
       `⚒️ CHẾ TẠO\n\n• Cần Rồng (+1): yêu cầu Cần Bạc + Đá x3\n• Cần Bóng Tối (+2): Cần Vàng + Đá x5\n• Không thể mua các cần này từ shop!`,
       event.threadID,
@@ -152,7 +153,7 @@ static async handle_shop({ api, event }) {
     );
   }
 
-  static async handle_upgrade({ api, event }) {
+  static async handle_upgrade({ api, event, model, Threads, Users, Currencies }) {
     return api.sendMessage(
       `📈 NÂNG CẤP CẦN CÂU\n\n• Dùng Đá nâng cấp để tăng +1, tối đa +5\n• Càng nâng cao, tỉ lệ bắt cá hiếm cao hơn và giảm rách dây`,
       event.threadID,
@@ -160,11 +161,11 @@ static async handle_shop({ api, event }) {
     );
   }
 
-  static async handle_info({ api, event, Users }) {
+  static async handle_info({ api, event, model, Threads, Users, Currencies }) {
     const data = JSON.parse(fs.readFileSync(`system/data/fishing/${event.senderID}.json`));
     const name = (await Users.getName(event.senderID)) || data.name;
 
-    const msg =
+    const infoMsg =
       `📄 THÔNG TIN NGƯ DÂN\n\n` +
       `👤 Tên: ${name}\n` +
       `🎣 Cần: ${data.rod.name} (+${data.rod.tier || 0})\n` +
@@ -174,10 +175,10 @@ static async handle_shop({ api, event }) {
       `🔖 Danh hiệu: ${data.title || "Chưa có"}\n` +
       `📍 Khu: ${data.khu}\n` +
       `⭐ Level: ${data.level}`;
-    return api.sendMessage(msg, event.threadID, event.messageID);
+    return api.sendMessage(infoMsg, event.threadID, event.messageID);
   }
 
-  static async handle_inv({ api, event }) {
+  static async handle_inv({ api, event, model, Threads, Users, Currencies }) {
     const data = JSON.parse(fs.readFileSync(`system/data/fishing/${event.senderID}.json`));
     const fishBag = data.fish;
     const list = Object.keys(fishBag).length
@@ -187,17 +188,17 @@ static async handle_shop({ api, event }) {
     return api.sendMessage(`🎒 TÚI CÁ\n\n${list}`, event.threadID, event.messageID);
   }
 
-  static async handle_bait({ api, event }) {
-    const msg =
+  static async handle_bait({ api, event, model, Threads, Users, Currencies }) {
+    const baitMsg =
       `🪱 MỒI CÂU\n\n` +
       `• Mồi thường: cơ bản\n` +
       `• Mồi thơm: tăng 10% tỉ lệ ra cá rare\n` +
       `• Mồi hiếm: tăng 25% tỉ lệ ra cá rare & legendary\n` +
       `• Một số mồi đặc biệt có thể chỉ có từ sự kiện`;
-    return api.sendMessage(msg, event.threadID, event.messageID);
+    return api.sendMessage(baitMsg, event.threadID, event.messageID);
   }
 
-  static async handle_line({ api, event }) {
+  static async handle_line({ api, event, model, Threads, Users, Currencies }) {
     return api.sendMessage(
       `🧵 DÂY CÂU\n\n• Dây thường: 20 lần dùng\n• Dây bền: 40 lần dùng\n• Nếu dây đứt, bạn sẽ không thể câu.`,
       event.threadID,
@@ -205,7 +206,7 @@ static async handle_shop({ api, event }) {
     );
   }
 
-  static async handle_sell({ api, event }) {
+  static async handle_sell({ api, event, model, Threads, Users, Currencies }) {
     const userFile = `system/data/fishing/${event.senderID}.json`;
     const data = JSON.parse(fs.readFileSync(userFile));
     const values = { "common": 300, "rare": 1500, "legendary": 5000 };
@@ -225,17 +226,17 @@ static async handle_shop({ api, event }) {
     fs.writeFileSync(userFile, JSON.stringify(data, null, 2));
     return api.sendMessage(`💰 Bạn đã bán hết cá và nhận được ${total.toLocaleString()} xu`, event.threadID, event.messageID);
   }
-static async handle_dex({ api, event }) {
+  static async handle_dex({ api, event, model, Threads, Users, Currencies }) {
     const data = JSON.parse(fs.readFileSync(`system/data/fishing/${event.senderID}.json`));
     const dex = data.dex;
     if (!dex.length) return api.sendMessage("📘 Bạn chưa câu được con cá nào!", event.threadID, event.messageID);
 
-    const msg = `📘 BỘ SƯU TẬP CÁ (${dex.length} loài)\n\n` +
+    const dexMsg = `📘 BỘ SƯU TẬP CÁ (${dex.length} loài)\n\n` +
       dex.map((name, i) => `#${i + 1}. ${name}`).join("\n");
-    return api.sendMessage(msg, event.threadID, event.messageID);
+    return api.sendMessage(dexMsg, event.threadID, event.messageID);
   }
 
-  static async handle_khu({ api, event }) {
+  static async handle_khu({ api, event, model, Threads, Users, Currencies }) {
     const userFile = `system/data/fishing/${event.senderID}.json`;
     const data = JSON.parse(fs.readFileSync(userFile));
     const level = data.level;
@@ -257,7 +258,7 @@ static async handle_dex({ api, event }) {
     return api.sendMessage(`📍 KHU VỰC\n${list}\n\nDùng .fish khu [tên] để chọn`, event.threadID, event.messageID);
   }
 
-  static async handle_top({ api, event }) {
+  static async handle_top({ api, event, model, Threads, Users, Currencies }) {
     const dir = "system/data/fishing";
     const files = fs.readdirSync(dir).filter(f => f.endsWith(".json"));
 
@@ -266,12 +267,12 @@ static async handle_dex({ api, event }) {
       return { name: data.name, xu: data.xu };
     }).sort((a, b) => b.xu - a.xu).slice(0, 10);
 
-    const msg = `🏆 BẢNG XẾP HẠNG NGƯ DÂN\n\n` +
+    const topMsg = `🏆 BẢNG XẾP HẠNG NGƯ DÂN\n\n` +
       top.map((u, i) => `#${i + 1}. ${u.name} - ${u.xu.toLocaleString()} xu`).join("\n");
-    return api.sendMessage(msg, event.threadID, event.messageID);
+    return api.sendMessage(topMsg, event.threadID, event.messageID);
   }
 
-  static async handle_duel({ api, event }) {
+  static async handle_duel({ api, event, model, Threads, Users, Currencies }) {
     return api.sendMessage(
       `⚔️ PvP ĐẤU CÁ sẽ sớm ra mắt!\nBạn có thể thách đấu người chơi khác để giành cá hoặc xu.`,
       event.threadID,
@@ -279,7 +280,7 @@ static async handle_dex({ api, event }) {
     );
   }
 
-  static async handle_boss({ api, event }) {
+  static async handle_boss({ api, event, model, Threads, Users, Currencies }) {
     return api.sendMessage(
       `🔥 BOSS CÁ\n\nBoss Quỷ Đỏ hiện đang lang thang ở "Núi Lửa".\nHãy đến đó bằng lệnh ".fish khu" và câu để bắt gặp!`,
       event.threadID,
@@ -287,7 +288,7 @@ static async handle_dex({ api, event }) {
     );
   }
 
-  static async handle_market({ api, event }) {
+  static async handle_market({ api, event, model, Threads, Users, Currencies }) {
     return api.sendMessage(
       `🏪 CHỢ CÁ\n\nTính năng giao dịch cá & vật phẩm giữa người chơi đang được phát triển.`,
       event.threadID,
@@ -295,7 +296,7 @@ static async handle_dex({ api, event }) {
     );
   }
 
-  static async handle_quest({ api, event }) {
+  static async handle_quest({ api, event, model, Threads, Users, Currencies }) {
     return api.sendMessage(
       `📋 NHIỆM VỤ HẰNG NGÀY\n\n• Bắt 3 cá hiếm\n• Bán 5 con cá\n• Kiếm 2000 xu từ câu cá\n\n(Tính năng hoàn thành tự động sẽ được cập nhật)`,
       event.threadID,
@@ -303,14 +304,14 @@ static async handle_dex({ api, event }) {
     );
   }
 
-  static async handle_hire({ api, event }) {
+  static async handle_hire({ api, event, model, Threads, Users, Currencies }) {
     return api.sendMessage(
       `🧑‍🌾 THUÊ NGƯ DÂN CÂU HỘ\n\nBạn sẽ tự động câu cá trong 30 phút tới và nhận cá ngẫu nhiên. Tính năng đang thử nghiệm.`,
       event.threadID,
       event.messageID
     );
   }
-static async onLoad({ api, model }) {
+  static async onLoad({ api, model }) {
     const folder = "system/data/fishing";
     if (!fs.existsSync(folder)) fs.mkdirSync(folder, { recursive: true });
 
@@ -325,15 +326,15 @@ static async onLoad({ api, model }) {
     }, 1000 * 60 * 30);
   }
 
-  static async onEvent({ api, event }) {
+  static async onEvent({ api, event, model, Threads, Users, Currencies }) {
     // Có thể xử lý sự kiện tin nhắn nếu cần (hiện chưa dùng)
   }
 
-  static async onReply({ api, event }) {
+  static async onReply({ api, event, model, Threads, Users, Currencies, onReply }) {
     // Có thể xử lý trả lời tin nhắn nếu có (hiện chưa dùng)
   }
 
-  static async onReaction({ api, event }) {
+  static async onReaction({ api, event, model, Threads, Users, Currencies, onReaction }) {
     // Có thể xử lý phản ứng (hiện chưa dùng)
   }
 };
