@@ -402,20 +402,20 @@ module.exports = class {
         const shopMsg =
           `🛒 SHOP CÂU CÁ\n\n` +
           `🎣 CẦN CÂU:\n` +
-          `• Cần Gỗ (+0) - 0 xu (có sẵn)\n` +
-          `• Cần Đồng (+0) - 2,000 xu\n` +
-          `• Cần Sắt (+0) - 5,000 xu\n` +
-          `• Cần Bạc (+0) - 10,000 xu\n` +
-          `• Cần Vàng (+0) - 20,000 xu\n\n` +
+          `• (cango) Cần Gỗ - 0 xu (có sẵn)\n` +
+          `• (candong) Cần Đồng - 20,000 xu\n` +
+          `• (cansat) Cần Sắt - 50,000 xu\n` +
+          `• (canbac) Cần Bạc - 100,000 xu\n` +
+          `• (canvang) Cần Vàng - 200,000 xu\n\n` +
           `🧵 DÂY CÂU:\n` +
-          `• Dây thường - 200 xu\n` +
-          `• Dây bền - 500 xu\n` +
-          `• Dây thép - 1,000 xu\n\n` +
+          `• (daythuong) Dây thường - 2,000 xu\n` +
+          `• (dayben) Dây bền - 5,000 xu\n` +
+          `• (daythep) Dây thép - 10,000 xu\n\n` +
           `🪱 MỒI:\n` +
-          `• Mồi thường - 0 xu\n` +
-          `• Mồi thơm - 800 xu\n` +
-          `• Mồi hiếm - 2,000 xu\n\n` +
-          `💡 Cách dùng: .fish shop buy [tên] [số lượng]`;
+          `• (moithuong) Mồi thường - 0 xu\n` +
+          `• (moithom) Mồi thơm - 8,000 xu\n` +
+          `• (moihiem) Mồi hiếm - 20,000 xu\n\n` +
+          `💡 Cách dùng: .fish shop buy [id] [số lượng]`;
         return api.sendMessage(shopMsg, threadID, messageID);
       }
 
@@ -428,15 +428,17 @@ module.exports = class {
         }
 
         const shopItems = {
-          "cần đồng": { price: 2000, type: "rod", name: "Cần Đồng", tier: 0 },
-          "cần sắt": { price: 5000, type: "rod", name: "Cần Sắt", tier: 0 },
-          "cần bạc": { price: 10000, type: "rod", name: "Cần Bạc", tier: 0 },
-          "cần vàng": { price: 20000, type: "rod", name: "Cần Vàng", tier: 0 },
-          "dây thường": { price: 200, type: "line", name: "Dây thường", durability: 20, maxDurability: 20 },
-          "dây bền": { price: 500, type: "line", name: "Dây bền", durability: 40, maxDurability: 40 },
-          "dây thép": { price: 1000, type: "line", name: "Dây thép", durability: 60, maxDurability: 60 },
-          "mồi thơm": { price: 800, type: "item", name: "Mồi thơm" },
-          "mồi hiếm": { price: 2000, type: "item", name: "Mồi hiếm" }
+          "cango": { price: 0, type: "rod", name: "Cần Gỗ", tier: 0 },
+          "candong": { price: 20000, type: "rod", name: "Cần Đồng", tier: 0 },
+          "cansat": { price: 50000, type: "rod", name: "Cần Sắt", tier: 0 },
+          "canbac": { price: 100000, type: "rod", name: "Cần Bạc", tier: 0 },
+          "canvang": { price: 200000, type: "rod", name: "Cần Vàng", tier: 0 },
+          "daythuong": { price: 2000, type: "line", name: "Dây thường", durability: 20, maxDurability: 20 },
+          "dayben": { price: 5000, type: "line", name: "Dây bền", durability: 40, maxDurability: 40 },
+          "daythep": { price: 10000, type: "line", name: "Dây thép", durability: 60, maxDurability: 60 },
+          "moithuong": { price: 0, type: "item", name: "Mồi thường" },
+          "moithom": { price: 8000, type: "item", name: "Mồi thơm" },
+          "moihiem": { price: 20000, type: "item", name: "Mồi hiếm" }
         };
 
         const selectedItem = shopItems[item];
@@ -613,12 +615,13 @@ module.exports = class {
     }
   }
 
-  static async handle_sell({ api, event, model, Threads, Users, Currencies }) {
+  static async handle_sell({ api, event, model, Threads, Users, Currencies, args }) {
     try {
       console.log("🎣 CauCaRPG: Bán cá");
       const { senderID, threadID, messageID } = event;
       const userFile = `system/data/fishing/${senderID}.json`;
       const data = JSON.parse(fs.readFileSync(userFile));
+      const action = args[1]?.toLowerCase();
 
       const fishValues = {
         "Cá diếc": 300,
@@ -632,30 +635,76 @@ module.exports = class {
         "Cá thần thoại": 20000
       };
 
-      let totalEarned = 0;
-      let soldFish = [];
-
-      Object.entries(data.fish).forEach(([fish, count]) => {
-        if (fishValues[fish]) {
-          const earned = fishValues[fish] * count;
-          totalEarned += earned;
-          soldFish.push(`${fish} × ${count} (+${earned.toLocaleString()} xu)`);
-          delete data.fish[fish];
-        }
-      });
-
-      if (soldFish.length === 0) {
+      if (Object.keys(data.fish).length === 0) {
         return api.sendMessage(`❌ Bạn không có cá để bán!`, threadID, messageID);
       }
 
-      data.xu += totalEarned;
+      if (!action) {
+        let sellMsg = `🐟 BÁN CÁ\n\n`;
+        let totalValue = 0;
+
+        for (const [fishName, count] of Object.entries(data.fish)) {
+          const fishValue = fishValues[fishName] || 300;
+          const totalFishValue = fishValue * count;
+          totalValue += totalFishValue;
+          sellMsg += `• ${fishName} x${count} = ${totalFishValue.toLocaleString()} xu\n`;
+        }
+
+        sellMsg += `\n💰 Tổng: ${totalValue.toLocaleString()} xu\n`;
+        sellMsg += `💡 Lệnh:\n`;
+        sellMsg += `• .fish sell all - Bán tất cả cá\n`;
+        sellMsg += `• .fish sell [tên cá] [số lượng] - Bán từng loại`;
+
+        return api.sendMessage(sellMsg, threadID, messageID);
+      }
+
+      if (action === "all") {
+        let totalEarned = 0;
+        let soldFish = [];
+
+        Object.entries(data.fish).forEach(([fish, count]) => {
+          if (fishValues[fish]) {
+            const earned = fishValues[fish] * count;
+            totalEarned += earned;
+            soldFish.push(`${fish} × ${count} (+${earned.toLocaleString()} xu)`);
+          }
+        });
+
+        data.xu += totalEarned;
+        data.fish = {};
+        fs.writeFileSync(userFile, JSON.stringify(data, null, 2));
+
+        return api.sendMessage(
+          `💰 BÁN TẤT CẢ CÁ THÀNH CÔNG!\n\n` +
+          `📦 Đã bán:\n${soldFish.join("\n")}\n\n` +
+          `💵 Tổng thu nhập: +${totalEarned.toLocaleString()} xu\n` +
+          `💰 Xu hiện tại: ${data.xu.toLocaleString()} xu`,
+          threadID, messageID
+        );
+      }
+
+      // Bán từng loại cá
+      const fishName = args[1];
+      const amount = parseInt(args[2]) || 1;
+
+      if (!data.fish[fishName] || data.fish[fishName] < amount) {
+        return api.sendMessage(`❌ Bạn không đủ ${fishName} để bán!`, threadID, messageID);
+      }
+
+      const fishValue = fishValues[fishName] || 300;
+      const sellValue = fishValue * amount;
+      
+      data.xu += sellValue;
+      data.fish[fishName] -= amount;
+      
+      if (data.fish[fishName] <= 0) {
+        delete data.fish[fishName];
+      }
+
       fs.writeFileSync(userFile, JSON.stringify(data, null, 2));
 
       return api.sendMessage(
-        `💰 BÁN CÁ THÀNH CÔNG!\n\n` +
-        `📦 Đã bán:\n${soldFish.join("\n")}\n\n` +
-        `💵 Tổng thu nhập: +${totalEarned.toLocaleString()} xu\n` +
-        `💰 Xu hiện tại: ${data.xu.toLocaleString()} xu`,
+        `✅ Đã bán ${amount}x ${fishName}!\n💰 Nhận được: ${sellValue.toLocaleString()} xu\n💳 Số dư: ${data.xu.toLocaleString()} xu`,
         threadID, messageID
       );
     } catch (error) {
