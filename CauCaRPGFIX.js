@@ -93,16 +93,27 @@ module.exports = class {
       if (!input) {
         console.log("🎣 CauCaRPG: Hiển thị menu chính");
         return api.sendMessage(
-          `🎣 MENU CÂU CÁ RPG\n\n` +
-          `• .fish cauca - Câu cá\n` +
-          `• .fish info - Thông tin người chơi\n` +
-          `• .fish shop - Mua đồ\n` +
-          `• .fish gacha - Gacha cá hiếm\n` +
-          `• .fish skin - Skin cần câu\n` +
-          `• .fish explore - Khám phá thế giới\n` +
-          `• .fish hire - Thuê ngư dân\n` +
-          `• .fish top - Bảng xếp hạng\n\n` +
-          `💡 Gõ ".fish [lệnh]" để sử dụng`,
+                  `🎣 MENU CÂU CÁ RPG\n\n` +
+        `🎣 CORE:\n` +
+        `• .fish cauca - Câu cá\n` +
+        `• .fish info - Thông tin người chơi\n` +
+        `• .fish inv - Túi đồ\n` +
+        `• .fish sell - Bán cá\n` +
+        `• .fish dex - Bộ sưu tập\n\n` +
+        `🛒 SHOP & CRAFT:\n` +
+        `• .fish shop - Mua đồ\n` +
+        `• .fish craft - Chế tạo\n` +
+        `• .fish upgrade - Nâng cấp\n` +
+        `• .fish bait - Đổi mồi\n` +
+        `• .fish line - Đổi dây\n\n` +
+        `🎰 GACHA & SKIN:\n` +
+        `• .fish gacha - Gacha cá hiếm\n` +
+        `• .fish skin - Skin cần câu\n\n` +
+        `🌍 EXPLORATION:\n` +
+        `• .fish explore - Khám phá thế giới\n` +
+        `• .fish hire - Thuê ngư dân\n` +
+        `• .fish top - Bảng xếp hạng\n\n` +
+        `💡 Gõ ".fish [lệnh]" để sử dụng`,
           threadID, messageID
         );
       }
@@ -116,9 +127,30 @@ module.exports = class {
         case "info": 
           console.log("🎣 CauCaRPG: Gọi handle_info");
           return this.handle_info({ api, event, model, Threads, Users, Currencies });
+        case "inv": 
+          console.log("🎣 CauCaRPG: Gọi handle_inv");
+          return this.handle_inv({ api, event, model, Threads, Users, Currencies });
+        case "sell": 
+          console.log("🎣 CauCaRPG: Gọi handle_sell");
+          return this.handle_sell({ api, event, model, Threads, Users, Currencies });
+        case "dex": 
+          console.log("🎣 CauCaRPG: Gọi handle_dex");
+          return this.handle_dex({ api, event, model, Threads, Users, Currencies });
         case "shop": 
           console.log("🎣 CauCaRPG: Gọi handle_shop");
           return this.handle_shop({ api, event, model, Threads, Users, Currencies, args });
+        case "craft": 
+          console.log("🎣 CauCaRPG: Gọi handle_craft");
+          return this.handle_craft({ api, event, model, Threads, Users, Currencies, args });
+        case "upgrade": 
+          console.log("🎣 CauCaRPG: Gọi handle_upgrade");
+          return this.handle_upgrade({ api, event, model, Threads, Users, Currencies, args });
+        case "bait": 
+          console.log("🎣 CauCaRPG: Gọi handle_bait");
+          return this.handle_bait({ api, event, model, Threads, Users, Currencies, args });
+        case "line": 
+          console.log("🎣 CauCaRPG: Gọi handle_line");
+          return this.handle_line({ api, event, model, Threads, Users, Currencies, args });
         case "gacha": 
           console.log("🎣 CauCaRPG: Gọi handle_gacha");
           return this.handle_gacha({ api, event, model, Threads, Users, Currencies, args });
@@ -439,6 +471,359 @@ module.exports = class {
       return api.sendMessage(`❌ Lệnh không hợp lệ. Dùng ".fish gacha" để xem hướng dẫn.`, threadID, messageID);
     } catch (error) {
       console.log(`🎣 CauCaRPG: Lỗi trong handle_gacha: ${error.message}`);
+      return api.sendMessage(`❌ Có lỗi xảy ra!`, event.threadID, event.messageID);
+    }
+  }
+
+  // ===== ADDITIONAL HANDLERS =====
+  
+  static async handle_inv({ api, event, model, Threads, Users, Currencies }) {
+    try {
+      console.log("🎣 CauCaRPG: Hiển thị inventory");
+      const { senderID, threadID, messageID } = event;
+      const userFile = `system/data/fishing/${senderID}.json`;
+      const data = JSON.parse(fs.readFileSync(userFile));
+
+      const fishList = Object.entries(data.fish).map(([fish, count]) => 
+        `• ${fish} × ${count}`
+      ).join("\n");
+
+      const itemList = Object.entries(data.inventory).map(([item, count]) => 
+        `• ${item} × ${count}`
+      ).join("\n");
+
+      return api.sendMessage(
+        `🎒 TÚI ĐỒ NGƯ DÂN\n\n` +
+        `🐟 CÁ (${Object.keys(data.fish).length} loại):\n${fishList || "Chưa có cá"}\n\n` +
+        `📦 VẬT PHẨM (${Object.keys(data.inventory).length} loại):\n${itemList || "Chưa có vật phẩm"}`,
+        threadID, messageID
+      );
+    } catch (error) {
+      console.log(`🎣 CauCaRPG: Lỗi trong handle_inv: ${error.message}`);
+      return api.sendMessage(`❌ Có lỗi xảy ra!`, event.threadID, event.messageID);
+    }
+  }
+
+  static async handle_sell({ api, event, model, Threads, Users, Currencies }) {
+    try {
+      console.log("🎣 CauCaRPG: Bán cá");
+      const { senderID, threadID, messageID } = event;
+      const userFile = `system/data/fishing/${senderID}.json`;
+      const data = JSON.parse(fs.readFileSync(userFile));
+
+      const fishValues = {
+        "Cá diếc": 300,
+        "Cá lóc": 400,
+        "Cá heo": 1500,
+        "Cá mập": 6000,
+        "Cá rồng": 10000,
+        "Cá ma": 12000,
+        "Cá mồi": 250,
+        "Cá mặt trăng": 2500,
+        "Cá thần thoại": 20000
+      };
+
+      let totalEarned = 0;
+      let soldFish = [];
+
+      Object.entries(data.fish).forEach(([fish, count]) => {
+        if (fishValues[fish]) {
+          const earned = fishValues[fish] * count;
+          totalEarned += earned;
+          soldFish.push(`${fish} × ${count} (+${earned.toLocaleString()} xu)`);
+          delete data.fish[fish];
+        }
+      });
+
+      if (soldFish.length === 0) {
+        return api.sendMessage(`❌ Bạn không có cá để bán!`, threadID, messageID);
+      }
+
+      data.xu += totalEarned;
+      fs.writeFileSync(userFile, JSON.stringify(data, null, 2));
+
+      return api.sendMessage(
+        `💰 BÁN CÁ THÀNH CÔNG!\n\n` +
+        `📦 Đã bán:\n${soldFish.join("\n")}\n\n` +
+        `💵 Tổng thu nhập: +${totalEarned.toLocaleString()} xu\n` +
+        `💰 Xu hiện tại: ${data.xu.toLocaleString()} xu`,
+        threadID, messageID
+      );
+    } catch (error) {
+      console.log(`🎣 CauCaRPG: Lỗi trong handle_sell: ${error.message}`);
+      return api.sendMessage(`❌ Có lỗi xảy ra!`, event.threadID, event.messageID);
+    }
+  }
+
+  static async handle_dex({ api, event, model, Threads, Users, Currencies }) {
+    try {
+      console.log("🎣 CauCaRPG: Hiển thị dex");
+      const { senderID, threadID, messageID } = event;
+      const userFile = `system/data/fishing/${senderID}.json`;
+      const data = JSON.parse(fs.readFileSync(userFile));
+
+      const allFish = [
+        "Cá diếc", "Cá lóc", "Cá heo", "Cá mập", "Cá rồng", 
+        "Cá ma", "Cá mồi", "Cá mặt trăng", "Cá thần thoại"
+      ];
+
+      const dexList = allFish.map(fish => {
+        const status = data.dex.includes(fish) ? "✅" : "❌";
+        return `${status} ${fish}`;
+      }).join("\n");
+
+      const progress = Math.floor((data.dex.length / allFish.length) * 100);
+
+      return api.sendMessage(
+        `📚 BỘ SƯU TẬP CÁ\n\n` +
+        `📊 Tiến độ: ${data.dex.length}/${allFish.length} (${progress}%)\n\n` +
+        `${dexList}`,
+        threadID, messageID
+      );
+    } catch (error) {
+      console.log(`🎣 CauCaRPG: Lỗi trong handle_dex: ${error.message}`);
+      return api.sendMessage(`❌ Có lỗi xảy ra!`, event.threadID, event.messageID);
+    }
+  }
+
+  static async handle_craft({ api, event, model, Threads, Users, Currencies, args }) {
+    try {
+      console.log("🎣 CauCaRPG: Hiển thị craft");
+      const { senderID, threadID, messageID } = event;
+      const userFile = `system/data/fishing/${senderID}.json`;
+      const data = JSON.parse(fs.readFileSync(userFile));
+      const action = args[1]?.toLowerCase();
+
+      if (!action) {
+        return api.sendMessage(
+          `⚒️ CHẾ TẠO VẬT PHẨM\n\n` +
+          `🎣 CẦN CÂU ĐẶC BIỆT:\n` +
+          `• Cần Rồng (+1 tier): Cần Bạc + Đá nâng cấp x3\n` +
+          `• Cần Bóng Tối (+2 tier): Cần Vàng + Đá nâng cấp x5\n` +
+          `• Cần Thần (+3 tier): Cần Bạch Kim + Đá hiếm x3\n\n` +
+          `🧵 DÂY CÂU ĐẶC BIỆT:\n` +
+          `• Dây Ma (120 durability): Dây thép + Đá nâng cấp x2\n` +
+          `• Dây Thần (200 durability): Dây titan + Đá hiếm x2\n\n` +
+          `💡 Cách dùng: .fish craft [tên]`,
+          threadID, messageID
+        );
+      }
+
+      const craftItems = {
+        "cần rồng": {
+          requirements: { "Cần Bạc": 1, "Đá nâng cấp": 3 },
+          result: { name: "Cần Rồng", tier: 1 }
+        },
+        "cần bóng tối": {
+          requirements: { "Cần Vàng": 1, "Đá nâng cấp": 5 },
+          result: { name: "Cần Bóng Tối", tier: 2 }
+        },
+        "dây ma": {
+          requirements: { "Dây thép": 1, "Đá nâng cấp": 2 },
+          result: { name: "Dây Ma", durability: 120, maxDurability: 120 }
+        }
+      };
+
+      const selectedCraft = craftItems[action];
+      if (!selectedCraft) {
+        return api.sendMessage(`❌ Không tìm thấy công thức "${action}"!`, threadID, messageID);
+      }
+
+      // Kiểm tra nguyên liệu
+      for (const [item, required] of Object.entries(selectedCraft.requirements)) {
+        if (!data.inventory[item] || data.inventory[item] < required) {
+          return api.sendMessage(`❌ Thiếu ${item}! Cần ${required} cái.`, threadID, messageID);
+        }
+      }
+
+      // Tiêu thụ nguyên liệu
+      for (const [item, required] of Object.entries(selectedCraft.requirements)) {
+        data.inventory[item] -= required;
+      }
+
+      // Nhận thành phẩm
+      if (selectedCraft.result.name.includes("Cần")) {
+        data.rod = selectedCraft.result;
+      } else if (selectedCraft.result.name.includes("Dây")) {
+        data.line = selectedCraft.result;
+      }
+
+      fs.writeFileSync(userFile, JSON.stringify(data, null, 2));
+
+      return api.sendMessage(
+        `✅ CHẾ TẠO THÀNH CÔNG!\n\n` +
+        `🎉 Bạn đã tạo ra: ${selectedCraft.result.name}`,
+        threadID, messageID
+      );
+    } catch (error) {
+      console.log(`🎣 CauCaRPG: Lỗi trong handle_craft: ${error.message}`);
+      return api.sendMessage(`❌ Có lỗi xảy ra!`, event.threadID, event.messageID);
+    }
+  }
+
+  static async handle_upgrade({ api, event, model, Threads, Users, Currencies, args }) {
+    try {
+      console.log("🎣 CauCaRPG: Hiển thị upgrade");
+      const { senderID, threadID, messageID } = event;
+      const userFile = `system/data/fishing/${senderID}.json`;
+      const data = JSON.parse(fs.readFileSync(userFile));
+      const action = args[1]?.toLowerCase();
+
+      if (!action) {
+        return api.sendMessage(
+          `🔧 NÂNG CẤP CẦN CÂU\n\n` +
+          `🎣 Cần hiện tại: ${data.rod.name} (+${data.rod.tier || 0})\n` +
+          `💎 Đá nâng cấp: ${data.inventory["Đá nâng cấp"] || 0}\n\n` +
+          `💡 Cách dùng: .fish upgrade rod`,
+          threadID, messageID
+        );
+      }
+
+      if (action === "rod") {
+        if (!data.inventory["Đá nâng cấp"] || data.inventory["Đá nâng cấp"] < 1) {
+          return api.sendMessage(`❌ Bạn cần ít nhất 1 Đá nâng cấp!`, threadID, messageID);
+        }
+
+        if ((data.rod.tier || 0) >= 5) {
+          return api.sendMessage(`❌ Cần câu đã đạt tier tối đa (+5)!`, threadID, messageID);
+        }
+
+        data.inventory["Đá nâng cấp"]--;
+        data.rod.tier = (data.rod.tier || 0) + 1;
+        fs.writeFileSync(userFile, JSON.stringify(data, null, 2));
+
+        return api.sendMessage(
+          `✅ NÂNG CẤP THÀNH CÔNG!\n\n` +
+          `🎣 Cần câu: ${data.rod.name} (+${data.rod.tier})\n` +
+          `💎 Đá còn lại: ${data.inventory["Đá nâng cấp"]}`,
+          threadID, messageID
+        );
+      }
+
+      return api.sendMessage(`❌ Lệnh không hợp lệ. Dùng ".fish upgrade" để xem hướng dẫn.`, threadID, messageID);
+    } catch (error) {
+      console.log(`🎣 CauCaRPG: Lỗi trong handle_upgrade: ${error.message}`);
+      return api.sendMessage(`❌ Có lỗi xảy ra!`, event.threadID, event.messageID);
+    }
+  }
+
+  static async handle_bait({ api, event, model, Threads, Users, Currencies, args }) {
+    try {
+      console.log("🎣 CauCaRPG: Hiển thị bait");
+      const { senderID, threadID, messageID } = event;
+      const userFile = `system/data/fishing/${senderID}.json`;
+      const data = JSON.parse(fs.readFileSync(userFile));
+      const action = args[1]?.toLowerCase();
+
+      if (!action) {
+        return api.sendMessage(
+          `🪱 MỒI CÂU CÁ\n\n` +
+          `🎣 Mồi hiện tại: ${data.bait}\n\n` +
+          `📦 Mồi có sẵn:\n` +
+          Object.entries(data.inventory).filter(([item]) => item.includes("Mồi"))
+            .map(([item, count]) => `• ${item} × ${count}`).join("\n") || "Chưa có mồi\n\n" +
+          `💡 Cách dùng: .fish bait use [tên]`,
+          threadID, messageID
+        );
+      }
+
+      if (action === "use") {
+        const baitName = args[2]?.toLowerCase();
+        if (!baitName) {
+          return api.sendMessage(`❌ Vui lòng chọn mồi!`, threadID, messageID);
+        }
+
+        const availableBaits = ["mồi thường", "mồi thơm", "mồi hiếm"];
+        const selectedBait = availableBaits.find(bait => 
+          bait.includes(baitName) || baitName.includes(bait)
+        );
+
+        if (!selectedBait) {
+          return api.sendMessage(`❌ Không tìm thấy mồi "${baitName}"!`, threadID, messageID);
+        }
+
+        const baitItemName = selectedBait === "mồi thường" ? "Mồi thường" : 
+                           selectedBait === "mồi thơm" ? "Mồi thơm" : "Mồi hiếm";
+
+        if (selectedBait !== "mồi thường" && (!data.inventory[baitItemName] || data.inventory[baitItemName] < 1)) {
+          return api.sendMessage(`❌ Bạn không có ${baitItemName}!`, threadID, messageID);
+        }
+
+        if (selectedBait !== "mồi thường") {
+          data.inventory[baitItemName]--;
+        }
+
+        data.bait = baitItemName;
+        fs.writeFileSync(userFile, JSON.stringify(data, null, 2));
+
+        return api.sendMessage(`✅ Đã đổi mồi thành: ${baitItemName}!`, threadID, messageID);
+      }
+
+      return api.sendMessage(`❌ Lệnh không hợp lệ. Dùng ".fish bait" để xem hướng dẫn.`, threadID, messageID);
+    } catch (error) {
+      console.log(`🎣 CauCaRPG: Lỗi trong handle_bait: ${error.message}`);
+      return api.sendMessage(`❌ Có lỗi xảy ra!`, event.threadID, event.messageID);
+    }
+  }
+
+  static async handle_line({ api, event, model, Threads, Users, Currencies, args }) {
+    try {
+      console.log("🎣 CauCaRPG: Hiển thị line");
+      const { senderID, threadID, messageID } = event;
+      const userFile = `system/data/fishing/${senderID}.json`;
+      const data = JSON.parse(fs.readFileSync(userFile));
+      const action = args[1]?.toLowerCase();
+
+      if (!action) {
+        return api.sendMessage(
+          `🧵 DÂY CÂU\n\n` +
+          `🎣 Dây hiện tại: ${data.line.name} (${data.line.durability}/${data.line.maxDurability})\n\n` +
+          `📦 Dây có sẵn:\n` +
+          Object.entries(data.inventory).filter(([item]) => item.includes("Dây"))
+            .map(([item, count]) => `• ${item} × ${count}`).join("\n") || "Chưa có dây dự phòng\n\n" +
+          `💡 Cách dùng: .fish line use [tên]`,
+          threadID, messageID
+        );
+      }
+
+      if (action === "use") {
+        const lineName = args[2]?.toLowerCase();
+        if (!lineName) {
+          return api.sendMessage(`❌ Vui lòng chọn dây!`, threadID, messageID);
+        }
+
+        const availableLines = ["dây thường", "dây bền", "dây thép"];
+        const selectedLine = availableLines.find(line => 
+          line.includes(lineName) || lineName.includes(line)
+        );
+
+        if (!selectedLine) {
+          return api.sendMessage(`❌ Không tìm thấy dây "${lineName}"!`, threadID, messageID);
+        }
+
+        const lineItemName = selectedLine === "dây thường" ? "Dây thường" : 
+                           selectedLine === "dây bền" ? "Dây bền" : "Dây thép";
+
+        if (!data.inventory[lineItemName] || data.inventory[lineItemName] < 1) {
+          return api.sendMessage(`❌ Bạn không có ${lineItemName}!`, threadID, messageID);
+        }
+
+        data.inventory[lineItemName]--;
+        data.line = { 
+          name: lineItemName, 
+          durability: lineItemName === "Dây thường" ? 20 : 
+                     lineItemName === "Dây bền" ? 40 : 60,
+          maxDurability: lineItemName === "Dây thường" ? 20 : 
+                        lineItemName === "Dây bền" ? 40 : 60
+        };
+        fs.writeFileSync(userFile, JSON.stringify(data, null, 2));
+
+        return api.sendMessage(`✅ Đã đổi dây thành: ${lineItemName}!`, threadID, messageID);
+      }
+
+      return api.sendMessage(`❌ Lệnh không hợp lệ. Dùng ".fish line" để xem hướng dẫn.`, threadID, messageID);
+    } catch (error) {
+      console.log(`🎣 CauCaRPG: Lỗi trong handle_line: ${error.message}`);
       return api.sendMessage(`❌ Có lỗi xảy ra!`, event.threadID, event.messageID);
     }
   }
