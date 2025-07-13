@@ -1509,6 +1509,16 @@ module.exports = class {
         const progress = Math.floor(((data.hire.duration - data.hire.timeLeft) / data.hire.duration) * 100);
         const progressBar = "█".repeat(Math.floor(progress / 10)) + "░".repeat(10 - Math.floor(progress / 10));
         
+        // Hiển thị danh sách cá đã câu được
+        let fishListMsg = "";
+        if (data.hire.fishList && Object.keys(data.hire.fishList).length > 0) {
+          const fishEntries = Object.entries(data.hire.fishList);
+          fishListMsg = "\n🐟 **CÁ ĐÃ CÂU ĐƯỢC:**\n" + 
+            fishEntries.map(([fishName, count]) => `• ${fishName}: ${count} con`).join("\n");
+        } else {
+          fishListMsg = "\n🐟 **CÁ ĐÃ CÂU ĐƯỢC:** Chưa có";
+        }
+        
         return api.sendMessage(
           `📊 TRẠNG THÁI NGƯ DÂN\n\n` +
           `🧑‍🌾 ${data.hire.fisher}\n` +
@@ -1516,7 +1526,8 @@ module.exports = class {
           `⚡ Hiệu suất: ${data.hire.efficiency}x\n` +
           `🐟 Cá đã câu: ${data.hire.fishCaught || 0} con\n` +
           `💰 Xu kiếm được: ${data.hire.xuEarned || 0} xu\n` +
-          `📊 Tiến độ: ${progressBar} ${progress}%`,
+          `📊 Tiến độ: ${progressBar} ${progress}%` +
+          fishListMsg,
           threadID, messageID
         );
       }
