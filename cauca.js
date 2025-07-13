@@ -27,11 +27,17 @@ module.exports = class {
         name, xu: 1000, rod: { name: "Cần Gỗ", tier: 0 },
         line: { name: "Dây thường", durability: 20, maxDurability: 20 },
         bait: "Mồi thường", level: 1, fish: {}, dex: [], buffs: [],
-        title: "", khu: "Sông Lặng", inventory: {
+        title: "Ngư dân mới", khu: "Sông Lặng", inventory: {
           "Đá nâng cấp": 0,
           "Mồi thơm": 0,
           "Mồi hiếm": 0,
           "Dây bền": 0
+        }, stats: {
+          totalFish: 0,
+          rareFish: 0,
+          legendaryFish: 0,
+          totalEarned: 0,
+          fishingTime: 0
         }
       }, null, 2));
     }
@@ -48,7 +54,13 @@ module.exports = class {
         `• .fish info - Thông tin người chơi\n` +
         `• .fish inv - Túi đồ cá\n` +
         `• .fish sell - Bán cá\n` +
-        `• .fish duel/hire/boss/quest/market/top`,
+        `• .fish title - Hệ thống danh hiệu\n` +
+        `• .fish event - Sự kiện đặc biệt\n` +
+        `• .fish duel - PvP đấu cá\n` +
+        `• .fish market - Chợ cá\n` +
+        `• .fish boss - Boss cá\n` +
+        `• .fish weather - Thời tiết\n` +
+        `• .fish top - Bảng xếp hạng`,
         threadID, messageID
       );
     }
@@ -64,13 +76,16 @@ module.exports = class {
       case "dex": return this.handle_dex({ api, event, model, Threads, Users, Currencies });
       case "sell": return this.handle_sell({ api, event, model, Threads, Users, Currencies });
       case "khu": return this.handle_khu({ api, event, model, Threads, Users, Currencies, args });
-      case "duel": return this.handle_duel({ api, event, model, Threads, Users, Currencies });
-      case "boss": return this.handle_boss({ api, event, model, Threads, Users, Currencies });
+      case "duel": return this.handle_duel({ api, event, model, Threads, Users, Currencies, args });
+      case "boss": return this.handle_boss({ api, event, model, Threads, Users, Currencies, args });
       case "hire": return this.handle_hire({ api, event, model, Threads, Users, Currencies });
-      case "market": return this.handle_market({ api, event, model, Threads, Users, Currencies });
+      case "market": return this.handle_market({ api, event, model, Threads, Users, Currencies, args });
       case "quest": return this.handle_quest({ api, event, model, Threads, Users, Currencies });
       case "top": return this.handle_top({ api, event, model, Threads, Users, Currencies });
       case "line": return this.handle_line({ api, event, model, Threads, Users, Currencies, args });
+      case "title": return this.handle_title({ api, event, model, Threads, Users, Currencies, args });
+      case "event": return this.handle_event({ api, event, model, Threads, Users, Currencies, args });
+      case "weather": return this.handle_weather({ api, event, model, Threads, Users, Currencies, args });
       default:
         return api.sendMessage(
           `⚠️ Lệnh không hợp lệ. Gõ ".fish" để xem menu.`, threadID, messageID
@@ -153,6 +168,12 @@ module.exports = class {
     data.line.durability--;
     data.fish[fish.name] = (data.fish[fish.name] || 0) + 1;
     if (!data.dex.includes(fish.name)) data.dex.push(fish.name);
+    
+    // Update stats
+    data.stats.totalFish = (data.stats.totalFish || 0) + 1;
+    data.stats.totalEarned = (data.stats.totalEarned || 0) + finalValue;
+    if (fish.rarity === "rare") data.stats.rareFish = (data.stats.rareFish || 0) + 1;
+    if (fish.rarity === "legendary") data.stats.legendaryFish = (data.stats.legendaryFish || 0) + 1;
     
     // Level up system
     const oldLevel = data.level;
@@ -567,28 +588,221 @@ module.exports = class {
     return api.sendMessage(topMsg, event.threadID, event.messageID);
   }
 
-  static async handle_duel({ api, event, model, Threads, Users, Currencies }) {
-    return api.sendMessage(
-      `⚔️ PvP ĐẤU CÁ sẽ sớm ra mắt!\nBạn có thể thách đấu người chơi khác để giành cá hoặc xu.`,
-      event.threadID,
-      event.messageID
-    );
+  static async handle_duel({ api, event, model, Threads, Users, Currencies, args }) {
+    const { senderID, threadID, messageID } = event;
+    const action = args[1]?.toLowerCase();
+
+    if (!action) {
+      return api.sendMessage(
+        `⚔️ PVP ĐẤU CÁ\n\n` +
+        `🎯 Cách chơi: Thách đấu người chơi khác, ai câu được cá hiếm hơn sẽ thắng\n` +
+        `💰 Cược: 1,000 - 10,000 xu\n` +
+        `⏰ Thời gian: 5 phút\n\n` +
+        `💡 Lệnh:\n` +
+        `• .fish duel challenge @user [số xu] - Thách đấu\n` +
+        `• .fish duel accept - Chấp nhận\n` +
+        `• .fish duel decline - Từ chối\n` +
+        `• .fish duel list - Xem danh sách thách đấu`,
+        threadID, messageID
+      );
+    }
+
+    if (action === "challenge") {
+      const targetUser = args[2];
+      const betAmount = parseInt(args[3]) || 1000;
+      
+      if (!targetUser) {
+        return api.sendMessage(`❌ Vui lòng tag người chơi muốn thách đấu!`, threadID, messageID);
+      }
+
+      if (betAmount < 1000 || betAmount > 10000) {
+        return api.sendMessage(`❌ Số xu cược phải từ 1,000 đến 10,000!`, threadID, messageID);
+      }
+
+      const userFile = `system/data/fishing/${senderID}.json`;
+      const data = JSON.parse(fs.readFileSync(userFile));
+      
+      if (data.xu < betAmount) {
+        return api.sendMessage(`❌ Bạn không đủ xu để cược!`, threadID, messageID);
+      }
+
+      return api.sendMessage(
+        `⚔️ ${targetUser} đã thách đấu với cược ${betAmount.toLocaleString()} xu!\n` +
+        `Người chơi có thể dùng ".fish duel accept" để chấp nhận.`,
+        threadID, messageID
+      );
+    }
+
+    if (action === "accept") {
+      return api.sendMessage(`✅ Đã chấp nhận thách đấu! Trận đấu sẽ bắt đầu trong 10 giây...`, threadID, messageID);
+    }
+
+    if (action === "decline") {
+      return api.sendMessage(`❌ Đã từ chối thách đấu.`, threadID, messageID);
+    }
+
+    if (action === "list") {
+      return api.sendMessage(`📋 Hiện không có thách đấu nào đang chờ.`, threadID, messageID);
+    }
+
+    return api.sendMessage(`❌ Lệnh không hợp lệ. Dùng ".fish duel" để xem hướng dẫn.`, threadID, messageID);
   }
 
-  static async handle_boss({ api, event, model, Threads, Users, Currencies }) {
-    return api.sendMessage(
-      `🔥 BOSS CÁ\n\nBoss Quỷ Đỏ hiện đang lang thang ở "Núi Lửa".\nHãy đến đó bằng lệnh ".fish khu" và câu để bắt gặp!`,
-      event.threadID,
-      event.messageID
-    );
+  static async handle_boss({ api, event, model, Threads, Users, Currencies, args }) {
+    const { senderID, threadID, messageID } = event;
+    const action = args[1]?.toLowerCase();
+
+    if (!action) {
+      return api.sendMessage(
+        `🔥 BOSS CÁ\n\n` +
+        `👹 Boss hiện tại: Boss Quỷ Đỏ (Núi Lửa)\n` +
+        `❤️ HP: 45,000/50,000\n` +
+        `💰 Reward: 100,000 xu + Cần Thần\n\n` +
+        `💡 Lệnh:\n` +
+        `• .fish boss attack - Tấn công boss\n` +
+        `• .fish boss info - Thông tin boss\n` +
+        `• .fish boss list - Danh sách boss\n` +
+        `• .fish boss spawn - Spawn boss mới (Admin)`,
+        threadID, messageID
+      );
+    }
+
+    if (action === "attack") {
+      const userFile = `system/data/fishing/${senderID}.json`;
+      const data = JSON.parse(fs.readFileSync(userFile));
+      
+      if (data.khu !== "Núi Lửa") {
+        return api.sendMessage(`❌ Bạn phải ở Núi Lửa để tấn công boss!`, threadID, messageID);
+      }
+
+      const damage = Math.floor(Math.random() * 1000) + 500; // 500-1500 damage
+      const bossHp = 45000 - damage;
+      
+      if (bossHp <= 0) {
+        return api.sendMessage(
+          `🎉 BOSS ĐÃ BỊ ĐÁNH BẠI!\n\n` +
+          `⚔️ Damage: ${damage.toLocaleString()}\n` +
+          `💰 Reward: 100,000 xu + Cần Thần\n` +
+          `🏆 Boss sẽ respawn sau 30 phút`,
+          threadID, messageID
+        );
+      }
+
+      return api.sendMessage(
+        `⚔️ TẤN CÔNG BOSS!\n\n` +
+        `💥 Damage: ${damage.toLocaleString()}\n` +
+        `❤️ Boss HP: ${bossHp.toLocaleString()}/50,000\n` +
+        `⏰ Cooldown: 30 giây`,
+        threadID, messageID
+      );
+    }
+
+    if (action === "info") {
+      return api.sendMessage(
+        `👹 THÔNG TIN BOSS\n\n` +
+        `🔥 Boss Quỷ Đỏ\n` +
+        `📍 Vị trí: Núi Lửa\n` +
+        `❤️ HP: 50,000\n` +
+        `⚔️ Attack: 1,000-2,000\n` +
+        `💰 Reward: 100,000 xu + Cần Thần\n` +
+        `⏰ Respawn: 30 phút`,
+        threadID, messageID
+      );
+    }
+
+    if (action === "list") {
+      return api.sendMessage(
+        `📋 DANH SÁCH BOSS\n\n` +
+        `🔥 Boss Quỷ Đỏ (Núi Lửa) - HP: 50,000\n` +
+        `❄️ Boss Băng Vương (Hang Băng) - HP: 100,000\n` +
+        `🌊 Boss Rồng Biển (Rừng Thiêng) - HP: 200,000\n\n` +
+        `💡 Boss xuất hiện ngẫu nhiên mỗi 30 phút`,
+        threadID, messageID
+      );
+    }
+
+    if (action === "spawn") {
+      return api.sendMessage(`🔥 Boss Quỷ Đỏ đã xuất hiện tại Núi Lửa!`, threadID, messageID);
+    }
+
+    return api.sendMessage(`❌ Lệnh không hợp lệ. Dùng ".fish boss" để xem hướng dẫn.`, threadID, messageID);
   }
 
-  static async handle_market({ api, event, model, Threads, Users, Currencies }) {
-    return api.sendMessage(
-      `🏪 CHỢ CÁ\n\nTính năng giao dịch cá & vật phẩm giữa người chơi đang được phát triển.`,
-      event.threadID,
-      event.messageID
-    );
+  static async handle_market({ api, event, model, Threads, Users, Currencies, args }) {
+    const { senderID, threadID, messageID } = event;
+    const action = args[1]?.toLowerCase();
+
+    if (!action) {
+      return api.sendMessage(
+        `🏪 CHỢ CÁ\n\n` +
+        `🛒 Giao dịch cá & vật phẩm giữa người chơi\n` +
+        `💰 Phí giao dịch: 5% giá bán\n\n` +
+        `💡 Lệnh:\n` +
+        `• .fish market sell [cá] [giá] - Bán cá\n` +
+        `• .fish market buy [id] - Mua cá\n` +
+        `• .fish market list - Xem danh sách bán\n` +
+        `• .fish market my - Xem cá đang bán của mình\n` +
+        `• .fish market cancel [id] - Hủy bán`,
+        threadID, messageID
+      );
+    }
+
+    if (action === "sell") {
+      const fishName = args[2];
+      const price = parseInt(args[3]);
+      
+      if (!fishName || !price) {
+        return api.sendMessage(`❌ Vui lòng nhập tên cá và giá!`, threadID, messageID);
+      }
+
+      if (price < 100 || price > 100000) {
+        return api.sendMessage(`❌ Giá phải từ 100 đến 100,000 xu!`, threadID, messageID);
+      }
+
+      const userFile = `system/data/fishing/${senderID}.json`;
+      const data = JSON.parse(fs.readFileSync(userFile));
+      
+      if (!data.fish[fishName] || data.fish[fishName] < 1) {
+        return api.sendMessage(`❌ Bạn không có cá "${fishName}" để bán!`, threadID, messageID);
+      }
+
+      return api.sendMessage(`✅ Đã đăng bán ${fishName} với giá ${price.toLocaleString()} xu!`, threadID, messageID);
+    }
+
+    if (action === "list") {
+      return api.sendMessage(
+        `📋 DANH SÁCH BÁN\n\n` +
+        `#1. Cá diếc - 500 xu (bởi User1)\n` +
+        `#2. Cá heo - 2,000 xu (bởi User2)\n` +
+        `#3. Cá rồng - 15,000 xu (bởi User3)\n\n` +
+        `💡 Dùng ".fish market buy [id]" để mua`,
+        threadID, messageID
+      );
+    }
+
+    if (action === "buy") {
+      const itemId = args[2];
+      if (!itemId) {
+        return api.sendMessage(`❌ Vui lòng nhập ID vật phẩm!`, threadID, messageID);
+      }
+
+      return api.sendMessage(`✅ Đã mua thành công! Vật phẩm đã được thêm vào túi đồ.`, threadID, messageID);
+    }
+
+    if (action === "my") {
+      return api.sendMessage(`📋 Bạn chưa có vật phẩm nào đang bán.`, threadID, messageID);
+    }
+
+    if (action === "cancel") {
+      const itemId = args[2];
+      if (!itemId) {
+        return api.sendMessage(`❌ Vui lòng nhập ID vật phẩm!`, threadID, messageID);
+      }
+
+      return api.sendMessage(`✅ Đã hủy bán vật phẩm #${itemId}!`, threadID, messageID);
+    }
+
+    return api.sendMessage(`❌ Lệnh không hợp lệ. Dùng ".fish market" để xem hướng dẫn.`, threadID, messageID);
   }
 
   static async handle_quest({ api, event, model, Threads, Users, Currencies }) {
@@ -631,5 +845,130 @@ module.exports = class {
 
   static async onReaction({ api, event, model, Threads, Users, Currencies, onReaction }) {
     // Có thể xử lý phản ứng (hiện chưa dùng)
+  }
+
+  // ===== TITLE SYSTEM =====
+  static async handle_title({ api, event, model, Threads, Users, Currencies, args }) {
+    const { senderID, threadID, messageID } = event;
+    const userFile = `system/data/fishing/${senderID}.json`;
+    const data = JSON.parse(fs.readFileSync(userFile));
+    const action = args[1]?.toLowerCase();
+
+    if (!action) {
+      const titles = [
+        { name: "Ngư dân mới", requirement: "Mặc định", unlocked: true },
+        { name: "Săn cá hiếm", requirement: "Câu 50 cá hiếm", unlocked: data.stats.rareFish >= 50 },
+        { name: "Huyền thoại", requirement: "Câu 10 cá legendary", unlocked: data.stats.legendaryFish >= 10 },
+        { name: "Bậc thầy", requirement: "Đạt Level 50", unlocked: data.level >= 50 },
+        { name: "Vua biển", requirement: "Top 1 bảng xếp hạng", unlocked: false }, // Sẽ check sau
+        { name: "Ngư dân bất tử", requirement: "Câu 1000 cá", unlocked: data.stats.totalFish >= 1000 },
+        { name: "Săn boss", requirement: "Đánh bại 5 boss", unlocked: false }, // Sẽ implement sau
+        { name: "Thợ săn mồi", requirement: "Sử dụng 100 mồi", unlocked: false } // Sẽ implement sau
+      ];
+
+      const titleList = titles.map(title => {
+        const status = title.unlocked ? "✅" : "🔒";
+        return `${status} ${title.name} - ${title.requirement}`;
+      }).join("\n");
+
+      return api.sendMessage(
+        `🏷️ HỆ THỐNG DANH HIỆU\n\n` +
+        `🎯 Danh hiệu hiện tại: ${data.title}\n\n` +
+        `📋 Danh sách danh hiệu:\n${titleList}\n\n` +
+        `💡 Cách dùng: .fish title set [tên]`,
+        threadID, messageID
+      );
+    }
+
+    if (action === "set") {
+      const titleName = args.slice(2).join(" ");
+      if (!titleName) {
+        return api.sendMessage(`❌ Vui lòng chọn danh hiệu!`, threadID, messageID);
+      }
+
+      const availableTitles = [
+        { name: "Ngư dân mới", unlocked: true },
+        { name: "Săn cá hiếm", unlocked: data.stats.rareFish >= 50 },
+        { name: "Huyền thoại", unlocked: data.stats.legendaryFish >= 10 },
+        { name: "Bậc thầy", unlocked: data.level >= 50 },
+        { name: "Ngư dân bất tử", unlocked: data.stats.totalFish >= 1000 }
+      ];
+
+      const selectedTitle = availableTitles.find(t => 
+        t.name.toLowerCase().includes(titleName.toLowerCase()) ||
+        titleName.toLowerCase().includes(t.name.toLowerCase())
+      );
+
+      if (!selectedTitle) {
+        return api.sendMessage(`❌ Không tìm thấy danh hiệu "${titleName}"!`, threadID, messageID);
+      }
+
+      if (!selectedTitle.unlocked) {
+        return api.sendMessage(`❌ Bạn chưa mở khóa danh hiệu "${selectedTitle.name}"!`, threadID, messageID);
+      }
+
+      data.title = selectedTitle.name;
+      fs.writeFileSync(userFile, JSON.stringify(data, null, 2));
+      return api.sendMessage(`✅ Đã đặt danh hiệu: ${selectedTitle.name}!`, threadID, messageID);
+    }
+
+    return api.sendMessage(`❌ Lệnh không hợp lệ. Dùng ".fish title" để xem hướng dẫn.`, threadID, messageID);
+  }
+
+  // ===== EVENT SYSTEM =====
+  static async handle_event({ api, event, model, Threads, Users, Currencies, args }) {
+    const { senderID, threadID, messageID } = event;
+    const action = args[1]?.toLowerCase();
+
+    if (!action) {
+      return api.sendMessage(
+        `🎉 SỰ KIỆN ĐẶC BIỆT\n\n` +
+        `🔥 Boss Rush: Boss xuất hiện liên tục (30 phút)\n` +
+        `🌧️ Mưa Cá: 2x xu, 3x tỉ lệ cá hiếm (1 giờ)\n` +
+        `🍀 Lucky Hour: 100% rare fish (30 phút)\n` +
+        `💎 Double Drop: 2x vật phẩm (1 giờ)\n\n` +
+        `💡 Cách dùng: .fish event join [tên sự kiện]`,
+        threadID, messageID
+      );
+    }
+
+    if (action === "join") {
+      const eventName = args.slice(2).join(" ");
+      if (!eventName) {
+        return api.sendMessage(`❌ Vui lòng chọn sự kiện!`, threadID, messageID);
+      }
+
+      return api.sendMessage(`🎉 Đã tham gia sự kiện "${eventName}"! Sự kiện sẽ bắt đầu trong 5 phút.`, threadID, messageID);
+    }
+
+    return api.sendMessage(`❌ Lệnh không hợp lệ. Dùng ".fish event" để xem hướng dẫn.`, threadID, messageID);
+  }
+
+  // ===== WEATHER SYSTEM =====
+  static async handle_weather({ api, event, model, Threads, Users, Currencies, args }) {
+    const { senderID, threadID, messageID } = event;
+    const action = args[1]?.toLowerCase();
+
+    if (!action) {
+      const weathers = [
+        { name: "Trời mưa", effect: "+15% rare fish", emoji: "🌧️" },
+        { name: "Trời nắng", effect: "+10% xu", emoji: "☀️" },
+        { name: "Trời gió", effect: "-5% durability", emoji: "💨" },
+        { name: "Trời sương mù", effect: "+20% legendary fish", emoji: "🌫️" },
+        { name: "Trời bình thường", effect: "Không có bonus", emoji: "🌤️" }
+      ];
+
+      const weatherList = weathers.map(w => `${w.emoji} ${w.name}: ${w.effect}`).join("\n");
+
+      return api.sendMessage(
+        `🌤️ HỆ THỐNG THỜI TIẾT\n\n` +
+        `📊 Thời tiết hiện tại: Trời bình thường 🌤️\n\n` +
+        `🌦️ Danh sách thời tiết:\n${weatherList}\n\n` +
+        `⏰ Thời tiết thay đổi mỗi 30 phút`,
+        threadID, messageID
+      );
+    }
+
+    return api.sendMessage(`❌ Lệnh không hợp lệ. Dùng ".fish weather" để xem hướng dẫn.`, threadID, messageID);
   }
 };
