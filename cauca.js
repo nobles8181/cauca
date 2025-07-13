@@ -38,6 +38,17 @@ module.exports = class {
           legendaryFish: 0,
           totalEarned: 0,
           fishingTime: 0
+        }, skins: {
+          rod: "default",
+          bag: "default",
+          avatar: "default"
+        }, gacha: {
+          tickets: 0,
+          pity: 0
+        }, exploration: {
+          discoveredAreas: ["Sông Lặng"],
+          keys: 0,
+          oxygenTank: 0
         }
       }, null, 2));
     }
@@ -60,6 +71,9 @@ module.exports = class {
         `• .fish market - Chợ cá\n` +
         `• .fish boss - Boss cá\n` +
         `• .fish weather - Thời tiết\n` +
+        `• .fish gacha - Gacha cá hiếm\n` +
+        `• .fish skin - Skin cần câu\n` +
+        `• .fish explore - Khám phá thế giới\n` +
         `• .fish top - Bảng xếp hạng`,
         threadID, messageID
       );
@@ -86,6 +100,9 @@ module.exports = class {
       case "title": return this.handle_title({ api, event, model, Threads, Users, Currencies, args });
       case "event": return this.handle_event({ api, event, model, Threads, Users, Currencies, args });
       case "weather": return this.handle_weather({ api, event, model, Threads, Users, Currencies, args });
+      case "gacha": return this.handle_gacha({ api, event, model, Threads, Users, Currencies, args });
+      case "skin": return this.handle_skin({ api, event, model, Threads, Users, Currencies, args });
+      case "explore": return this.handle_explore({ api, event, model, Threads, Users, Currencies, args });
       default:
         return api.sendMessage(
           `⚠️ Lệnh không hợp lệ. Gõ ".fish" để xem menu.`, threadID, messageID
@@ -133,7 +150,17 @@ module.exports = class {
       "Hồ Lớn": 5,
       "Rừng Thiêng": 10,
       "Núi Lửa": 15,
-      "Hang Băng": 20
+      "Hang Băng": 20,
+      "Hang Động Bí Mật": 25,
+      "Đảo Hoang": 30,
+      "Vùng Nước Sâu": 35,
+      "Rừng Ma": 40,
+      "Thung Lũng Rồng": 45,
+      "Đại Dương Xanh": 50,
+      "Hang Động Thời Gian": 55,
+      "Thiên Đường Cá": 60,
+      "Vực Sâu Vô Tận": 65,
+      "Cổng Không Gian": 70
     };
     baseChance += areaBonus[data.khu] || 0;
 
@@ -226,7 +253,11 @@ module.exports = class {
         `• Mồi thường - 0 xu\n` +
         `• Mồi thơm - 800 xu\n` +
         `• Mồi hiếm - 2000 xu\n\n` +
-        `💡 Cách dùng: .fish shop buy [tên] [số lượng]`;
+        `�️ KHÁM PHÁ:\n` +
+        `• Key - 5000 xu\n` +
+        `• Oxygen Tank - 3000 xu\n` +
+        `• Gacha Ticket - 1000 xu\n\n` +
+        `� Cách dùng: .fish shop buy [tên] [số lượng]`;
       return api.sendMessage(shopMsg, threadID, messageID);
     }
 
@@ -238,7 +269,10 @@ module.exports = class {
         "dây bền": { price: 500, type: "line", name: "Dây bền", durability: 40, maxDurability: 40 },
         "đá nâng cấp": { price: 1000, type: "item", name: "Đá nâng cấp" },
         "mồi thơm": { price: 800, type: "item", name: "Mồi thơm" },
-        "mồi hiếm": { price: 2000, type: "item", name: "Mồi hiếm" }
+        "mồi hiếm": { price: 2000, type: "item", name: "Mồi hiếm" },
+        "key": { price: 5000, type: "exploration", name: "Key" },
+        "oxygen tank": { price: 3000, type: "exploration", name: "Oxygen Tank" },
+        "gacha ticket": { price: 1000, type: "gacha", name: "Gacha Ticket" }
       };
 
       const selectedItem = shopItems[item];
@@ -259,6 +293,14 @@ module.exports = class {
         data.line = { name: selectedItem.name, durability: selectedItem.durability, maxDurability: selectedItem.maxDurability };
       } else if (selectedItem.type === "item") {
         data.inventory[selectedItem.name] = (data.inventory[selectedItem.name] || 0) + amount;
+      } else if (selectedItem.type === "exploration") {
+        if (selectedItem.name === "Key") {
+          data.exploration.keys = (data.exploration.keys || 0) + amount;
+        } else if (selectedItem.name === "Oxygen Tank") {
+          data.exploration.oxygenTank = (data.exploration.oxygenTank || 0) + amount;
+        }
+      } else if (selectedItem.type === "gacha") {
+        data.gacha.tickets = (data.gacha.tickets || 0) + amount;
       }
 
       fs.writeFileSync(userFile, JSON.stringify(data, null, 2));
@@ -534,14 +576,26 @@ module.exports = class {
       { name: "Hồ Lớn", required: 3 },
       { name: "Rừng Thiêng", required: 5 },
       { name: "Núi Lửa", required: 8 },
-      { name: "Hang Băng", required: 12 }
+      { name: "Hang Băng", required: 12 },
+      { name: "Hang Động Bí Mật", required: 15, key: 1 },
+      { name: "Đảo Hoang", required: 20, key: 2 },
+      { name: "Vùng Nước Sâu", required: 25, oxygen: 1 },
+      { name: "Rừng Ma", required: 30 },
+      { name: "Thung Lũng Rồng", required: 35 },
+      { name: "Đại Dương Xanh", required: 40 },
+      { name: "Hang Động Thời Gian", required: 50 },
+      { name: "Thiên Đường Cá", required: 60 },
+      { name: "Vực Sâu Vô Tận", required: 80 },
+      { name: "Cổng Không Gian", required: 100 }
     ];
 
     if (!action) {
       const list = areas.map(area => {
         const status = level >= area.required ? "(✔️ Mở)" : `(🔒 Cần LV ${area.required})`;
         const boss = (area.name === "Núi Lửa") ? "🔥 Boss cá!" : "";
-        return `• ${area.name} ${status} ${boss}`;
+        const special = area.key ? `🗝️ Cần ${area.key} Key` : 
+                       area.oxygen ? `🤿 Cần ${area.oxygen} Oxygen` : "";
+        return `• ${area.name} ${status} ${boss} ${special}`;
       }).join("\n");
 
       return api.sendMessage(`📍 KHU VỰC\n${list}\n\n💡 Dùng .fish khu go [tên] để chuyển đến`, threadID, messageID);
@@ -566,7 +620,19 @@ module.exports = class {
         return api.sendMessage(`❌ Bạn cần đạt Level ${selectedArea.required} để vào ${selectedArea.name}!`, threadID, messageID);
       }
 
+      // Check for special requirements
+      if (selectedArea.key && data.exploration.keys < selectedArea.key) {
+        return api.sendMessage(`❌ Bạn cần ${selectedArea.key} Key để vào ${selectedArea.name}!`, threadID, messageID);
+      }
+
+      if (selectedArea.oxygen && data.exploration.oxygenTank < selectedArea.oxygen) {
+        return api.sendMessage(`❌ Bạn cần ${selectedArea.oxygen} Oxygen Tank để vào ${selectedArea.name}!`, threadID, messageID);
+      }
+
       data.khu = selectedArea.name;
+      if (!data.exploration.discoveredAreas.includes(selectedArea.name)) {
+        data.exploration.discoveredAreas.push(selectedArea.name);
+      }
       fs.writeFileSync(userFile, JSON.stringify(data, null, 2));
       return api.sendMessage(`✅ Đã chuyển đến ${selectedArea.name}!`, threadID, messageID);
     }
@@ -970,5 +1036,397 @@ module.exports = class {
     }
 
     return api.sendMessage(`❌ Lệnh không hợp lệ. Dùng ".fish weather" để xem hướng dẫn.`, threadID, messageID);
+  }
+
+  // ===== GACHA SYSTEM =====
+  static async handle_gacha({ api, event, model, Threads, Users, Currencies, args }) {
+    const { senderID, threadID, messageID } = event;
+    const userFile = `system/data/fishing/${senderID}.json`;
+    const data = JSON.parse(fs.readFileSync(userFile));
+    const action = args[1]?.toLowerCase();
+
+    if (!action) {
+      return api.sendMessage(
+        `🎰 GACHA CÁ HIẾM\n\n` +
+        `🎫 Tickets: ${data.gacha.tickets}\n` +
+        `💔 Pity: ${data.gacha.pity}/10\n\n` +
+        `📦 Gacha Pool:\n` +
+        `• 3⭐ Common Fish (70%)\n` +
+        `• 4⭐ Rare Fish (25%)\n` +
+        `• 5⭐ Legendary Fish (5%)\n\n` +
+        `💡 Lệnh:\n` +
+        `• .fish gacha pull [số lần] - Gacha\n` +
+        `• .fish gacha buy [số lần] - Mua ticket\n` +
+        `• .fish gacha info - Thông tin gacha`,
+        threadID, messageID
+      );
+    }
+
+    if (action === "pull") {
+      const pulls = parseInt(args[2]) || 1;
+      if (pulls < 1 || pulls > 10) {
+        return api.sendMessage(`❌ Số lần gacha phải từ 1-10!`, threadID, messageID);
+      }
+
+      if (data.gacha.tickets < pulls) {
+        return api.sendMessage(`❌ Bạn không đủ ticket! Cần ${pulls} tickets.`, threadID, messageID);
+      }
+
+      const gachaPool = [
+        // 3⭐ Common (70%)
+        { name: "Cá diếc", rarity: "common", stars: 3, chance: 70 },
+        { name: "Cá lóc", rarity: "common", stars: 3, chance: 70 },
+        { name: "Cá mồi", rarity: "common", stars: 3, chance: 70 },
+        // 4⭐ Rare (25%)
+        { name: "Cá heo", rarity: "rare", stars: 4, chance: 25 },
+        { name: "Cá mặt trăng", rarity: "rare", stars: 4, chance: 25 },
+        // 5⭐ Legendary (5%)
+        { name: "Cá mập", rarity: "legendary", stars: 5, chance: 5 },
+        { name: "Cá rồng", rarity: "legendary", stars: 5, chance: 5 },
+        { name: "Cá ma", rarity: "legendary", stars: 5, chance: 5 },
+        { name: "Cá thần thoại", rarity: "legendary", stars: 5, chance: 5 }
+      ];
+
+      let results = [];
+      for (let i = 0; i < pulls; i++) {
+        data.gacha.pity++;
+        const chance = Math.random() * 100;
+        
+        // Pity system: 10 pulls = guaranteed 4⭐
+        if (data.gacha.pity >= 10) {
+          const rareFish = gachaPool.filter(f => f.stars === 4);
+          const randomRare = rareFish[Math.floor(Math.random() * rareFish.length)];
+          results.push(randomRare);
+          data.gacha.pity = 0;
+        } else {
+          let selectedFish;
+          if (chance < 5) {
+            const legendaryFish = gachaPool.filter(f => f.stars === 5);
+            selectedFish = legendaryFish[Math.floor(Math.random() * legendaryFish.length)];
+            data.gacha.pity = 0;
+          } else if (chance < 30) {
+            const rareFish = gachaPool.filter(f => f.stars === 4);
+            selectedFish = rareFish[Math.floor(Math.random() * rareFish.length)];
+            data.gacha.pity = 0;
+          } else {
+            const commonFish = gachaPool.filter(f => f.stars === 3);
+            selectedFish = commonFish[Math.floor(Math.random() * commonFish.length)];
+          }
+          results.push(selectedFish);
+        }
+
+        // Add fish to inventory
+        data.fish[selectedFish.name] = (data.fish[selectedFish.name] || 0) + 1;
+        if (!data.dex.includes(selectedFish.name)) data.dex.push(selectedFish.name);
+      }
+
+      data.gacha.tickets -= pulls;
+      fs.writeFileSync(userFile, JSON.stringify(data, null, 2));
+
+      const resultMsg = results.map(fish => {
+        const stars = "⭐".repeat(fish.stars);
+        const emoji = fish.rarity === "legendary" ? "🟡" : fish.rarity === "rare" ? "🔵" : "⚪";
+        return `${emoji} ${stars} ${fish.name}`;
+      }).join("\n");
+
+      return api.sendMessage(
+        `🎰 GACHA KẾT QUẢ (${pulls} lần):\n\n${resultMsg}\n\n` +
+        `🎫 Tickets còn lại: ${data.gacha.tickets}\n` +
+        `💔 Pity: ${data.gacha.pity}/10`,
+        threadID, messageID
+      );
+    }
+
+    if (action === "buy") {
+      const amount = parseInt(args[2]) || 1;
+      const cost = amount * 1000; // 1 ticket = 1,000 xu
+      
+      if (data.xu < cost) {
+        return api.sendMessage(`❌ Bạn không đủ xu! Cần ${cost.toLocaleString()} xu.`, threadID, messageID);
+      }
+
+      data.xu -= cost;
+      data.gacha.tickets += amount;
+      fs.writeFileSync(userFile, JSON.stringify(data, null, 2));
+
+      return api.sendMessage(`✅ Đã mua ${amount} ticket với giá ${cost.toLocaleString()} xu!`, threadID, messageID);
+    }
+
+    if (action === "info") {
+      return api.sendMessage(
+        `📊 THÔNG TIN GACHA\n\n` +
+        `🎫 Giá ticket: 1,000 xu\n` +
+        `💔 Pity system: 10 pulls = guaranteed 4⭐\n` +
+        `🎯 Tỉ lệ:\n` +
+        `• 3⭐ Common: 70%\n` +
+        `• 4⭐ Rare: 25%\n` +
+        `• 5⭐ Legendary: 5%\n\n` +
+        `💡 Tips: Gacha nhiều lần để tăng pity!`,
+        threadID, messageID
+      );
+    }
+
+    return api.sendMessage(`❌ Lệnh không hợp lệ. Dùng ".fish gacha" để xem hướng dẫn.`, threadID, messageID);
+  }
+
+  // ===== SKIN SYSTEM =====
+  static async handle_skin({ api, event, model, Threads, Users, Currencies, args }) {
+    const { senderID, threadID, messageID } = event;
+    const userFile = `system/data/fishing/${senderID}.json`;
+    const data = JSON.parse(fs.readFileSync(userFile));
+    const action = args[1]?.toLowerCase();
+
+    if (!action) {
+      const rodSkins = [
+        { name: "default", display: "Cần Gỗ", unlocked: true },
+        { name: "diamond", display: "Cần Kim Cương", unlocked: false },
+        { name: "rainbow", display: "Cần Cầu Vồng", unlocked: false },
+        { name: "shadow", display: "Cần Bóng Đêm", unlocked: false },
+        { name: "divine", display: "Cần Thần", unlocked: false }
+      ];
+
+      const bagSkins = [
+        { name: "default", display: "Túi Thường", unlocked: true },
+        { name: "magic", display: "Túi Ma Thuật", unlocked: false },
+        { name: "infinite", display: "Túi Vô Hạn", unlocked: false }
+      ];
+
+      const rodList = rodSkins.map(skin => {
+        const status = skin.unlocked ? "✅" : "🔒";
+        return `${status} ${skin.display}`;
+      }).join("\n");
+
+      const bagList = bagSkins.map(skin => {
+        const status = skin.unlocked ? "✅" : "🔒";
+        return `${status} ${skin.display}`;
+      }).join("\n");
+
+      return api.sendMessage(
+        `🎨 SKIN SYSTEM\n\n` +
+        `🎣 Cần câu hiện tại: ${data.skins.rod}\n` +
+        `🎒 Túi đồ hiện tại: ${data.skins.bag}\n\n` +
+        `🎣 ROD SKINS:\n${rodList}\n\n` +
+        `🎒 BAG SKINS:\n${bagList}\n\n` +
+        `💡 Lệnh:\n` +
+        `• .fish skin rod [tên] - Đổi skin cần\n` +
+        `• .fish skin bag [tên] - Đổi skin túi\n` +
+        `• .fish skin unlock [type] [tên] - Mở khóa skin`,
+        threadID, messageID
+      );
+    }
+
+    if (action === "rod") {
+      const skinName = args[2]?.toLowerCase();
+      if (!skinName) {
+        return api.sendMessage(`❌ Vui lòng chọn skin!`, threadID, messageID);
+      }
+
+      const availableSkins = ["default", "diamond", "rainbow", "shadow", "divine"];
+      if (!availableSkins.includes(skinName)) {
+        return api.sendMessage(`❌ Skin "${skinName}" không tồn tại!`, threadID, messageID);
+      }
+
+      data.skins.rod = skinName;
+      fs.writeFileSync(userFile, JSON.stringify(data, null, 2));
+      return api.sendMessage(`✅ Đã đổi skin cần câu thành: ${skinName}!`, threadID, messageID);
+    }
+
+    if (action === "bag") {
+      const skinName = args[2]?.toLowerCase();
+      if (!skinName) {
+        return api.sendMessage(`❌ Vui lòng chọn skin!`, threadID, messageID);
+      }
+
+      const availableSkins = ["default", "magic", "infinite"];
+      if (!availableSkins.includes(skinName)) {
+        return api.sendMessage(`❌ Skin "${skinName}" không tồn tại!`, threadID, messageID);
+      }
+
+      data.skins.bag = skinName;
+      fs.writeFileSync(userFile, JSON.stringify(data, null, 2));
+      return api.sendMessage(`✅ Đã đổi skin túi đồ thành: ${skinName}!`, threadID, messageID);
+    }
+
+    if (action === "unlock") {
+      const type = args[2]?.toLowerCase();
+      const skinName = args[3]?.toLowerCase();
+      
+      if (!type || !skinName) {
+        return api.sendMessage(`❌ Vui lòng nhập loại và tên skin!`, threadID, messageID);
+      }
+
+      return api.sendMessage(`✅ Đã mở khóa skin ${skinName} (${type})!`, threadID, messageID);
+    }
+
+    return api.sendMessage(`❌ Lệnh không hợp lệ. Dùng ".fish skin" để xem hướng dẫn.`, threadID, messageID);
+  }
+
+  // ===== WORLD EXPLORATION =====
+  static async handle_explore({ api, event, model, Threads, Users, Currencies, args }) {
+    const { senderID, threadID, messageID } = event;
+    const userFile = `system/data/fishing/${senderID}.json`;
+    const data = JSON.parse(fs.readFileSync(userFile));
+    const action = args[1]?.toLowerCase();
+
+    if (!action) {
+      const allAreas = [
+        // Basic Areas
+        { name: "Sông Lặng", type: "basic", required: 1, discovered: true },
+        { name: "Hồ Lớn", type: "basic", required: 3, discovered: data.exploration.discoveredAreas.includes("Hồ Lớn") },
+        { name: "Rừng Thiêng", type: "basic", required: 5, discovered: data.exploration.discoveredAreas.includes("Rừng Thiêng") },
+        { name: "Núi Lửa", type: "basic", required: 8, discovered: data.exploration.discoveredAreas.includes("Núi Lửa") },
+        { name: "Hang Băng", type: "basic", required: 12, discovered: data.exploration.discoveredAreas.includes("Hang Băng") },
+        
+        // Secret Areas
+        { name: "Hang Động Bí Mật", type: "secret", required: 15, key: 1, discovered: data.exploration.discoveredAreas.includes("Hang Động Bí Mật") },
+        { name: "Đảo Hoang", type: "secret", required: 20, key: 2, discovered: data.exploration.discoveredAreas.includes("Đảo Hoang") },
+        { name: "Vùng Nước Sâu", type: "deep", required: 25, oxygen: 1, discovered: data.exploration.discoveredAreas.includes("Vùng Nước Sâu") },
+        { name: "Rừng Ma", type: "night", required: 30, discovered: data.exploration.discoveredAreas.includes("Rừng Ma") },
+        
+        // Advanced Areas
+        { name: "Thung Lũng Rồng", type: "advanced", required: 35, discovered: data.exploration.discoveredAreas.includes("Thung Lũng Rồng") },
+        { name: "Đại Dương Xanh", type: "ocean", required: 40, discovered: data.exploration.discoveredAreas.includes("Đại Dương Xanh") },
+        { name: "Hang Động Thời Gian", type: "time", required: 50, discovered: data.exploration.discoveredAreas.includes("Hang Động Thời Gian") },
+        
+        // Legendary Areas
+        { name: "Thiên Đường Cá", type: "legendary", required: 60, discovered: data.exploration.discoveredAreas.includes("Thiên Đường Cá") },
+        { name: "Vực Sâu Vô Tận", type: "abyss", required: 80, discovered: data.exploration.discoveredAreas.includes("Vực Sâu Vô Tận") },
+        { name: "Cổng Không Gian", type: "space", required: 100, discovered: data.exploration.discoveredAreas.includes("Cổng Không Gian") }
+      ];
+
+      const areaList = allAreas.map(area => {
+        const status = area.discovered ? "✅" : "🔒";
+        const req = area.type === "secret" ? `LV ${area.required} + Key` :
+                   area.type === "deep" ? `LV ${area.required} + Oxygen` :
+                   `LV ${area.required}`;
+        const typeIcon = area.type === "secret" ? "🗝️" : 
+                        area.type === "deep" ? "🤿" :
+                        area.type === "night" ? "🌙" :
+                        area.type === "advanced" ? "⚡" :
+                        area.type === "ocean" ? "🌊" :
+                        area.type === "time" ? "⏰" :
+                        area.type === "legendary" ? "👑" :
+                        area.type === "abyss" ? "🕳️" :
+                        area.type === "space" ? "🚀" : "📍";
+        return `${status} ${typeIcon} ${area.name} - ${req}`;
+      }).join("\n");
+
+      return api.sendMessage(
+        `🌍 KHÁM PHÁ THẾ GIỚI\n\n` +
+        `🗝️ Keys: ${data.exploration.keys}\n` +
+        `🤿 Oxygen Tanks: ${data.exploration.oxygenTank}\n` +
+        `📍 Khu vực hiện tại: ${data.khu}\n\n` +
+        `🗺️ DANH SÁCH KHU VỰC:\n${areaList}\n\n` +
+        `💡 Lệnh:\n` +
+        `• .fish explore go [tên] - Chuyển đến khu vực\n` +
+        `• .fish explore discover - Khám phá khu vực mới\n` +
+        `• .fish explore treasure - Tìm kho báu\n` +
+        `• .fish explore map - Xem bản đồ`,
+        threadID, messageID
+      );
+    }
+
+    if (action === "go") {
+      const areaName = args.slice(2).join(" ");
+      if (!areaName) {
+        return api.sendMessage(`❌ Vui lòng chọn khu vực!`, threadID, messageID);
+      }
+
+      const areas = {
+        "Sông Lặng": { required: 1, type: "basic" },
+        "Hồ Lớn": { required: 3, type: "basic" },
+        "Rừng Thiêng": { required: 5, type: "basic" },
+        "Núi Lửa": { required: 8, type: "basic" },
+        "Hang Băng": { required: 12, type: "basic" },
+        "Hang Động Bí Mật": { required: 15, type: "secret", key: 1 },
+        "Đảo Hoang": { required: 20, type: "secret", key: 2 },
+        "Vùng Nước Sâu": { required: 25, type: "deep", oxygen: 1 },
+        "Rừng Ma": { required: 30, type: "night" },
+        "Thung Lũng Rồng": { required: 35, type: "advanced" },
+        "Đại Dương Xanh": { required: 40, type: "ocean" },
+        "Hang Động Thời Gian": { required: 50, type: "time" },
+        "Thiên Đường Cá": { required: 60, type: "legendary" },
+        "Vực Sâu Vô Tận": { required: 80, type: "abyss" },
+        "Cổng Không Gian": { required: 100, type: "space" }
+      };
+
+      const selectedArea = areas[areaName];
+      if (!selectedArea) {
+        return api.sendMessage(`❌ Không tìm thấy khu vực "${areaName}"!`, threadID, messageID);
+      }
+
+      if (data.level < selectedArea.required) {
+        return api.sendMessage(`❌ Bạn cần Level ${selectedArea.required} để vào ${areaName}!`, threadID, messageID);
+      }
+
+      if (selectedArea.type === "secret" && data.exploration.keys < selectedArea.key) {
+        return api.sendMessage(`❌ Bạn cần ${selectedArea.key} Key để vào ${areaName}!`, threadID, messageID);
+      }
+
+      if (selectedArea.type === "deep" && data.exploration.oxygenTank < selectedArea.oxygen) {
+        return api.sendMessage(`❌ Bạn cần ${selectedArea.oxygen} Oxygen Tank để vào ${areaName}!`, threadID, messageID);
+      }
+
+      data.khu = areaName;
+      if (!data.exploration.discoveredAreas.includes(areaName)) {
+        data.exploration.discoveredAreas.push(areaName);
+      }
+      fs.writeFileSync(userFile, JSON.stringify(data, null, 2));
+
+      return api.sendMessage(`✅ Đã chuyển đến ${areaName}!`, threadID, messageID);
+    }
+
+    if (action === "discover") {
+      const discoveryChance = Math.random() * 100;
+      if (discoveryChance < 10) { // 10% chance
+        const newAreas = ["Hang Động Bí Mật", "Đảo Hoang", "Vùng Nước Sâu", "Rừng Ma"];
+        const discoveredArea = newAreas[Math.floor(Math.random() * newAreas.length)];
+        
+        if (!data.exploration.discoveredAreas.includes(discoveredArea)) {
+          data.exploration.discoveredAreas.push(discoveredArea);
+          fs.writeFileSync(userFile, JSON.stringify(data, null, 2));
+          return api.sendMessage(`🎉 Khám phá thành công! Bạn đã tìm thấy ${discoveredArea}!`, threadID, messageID);
+        }
+      }
+      
+      return api.sendMessage(`🔍 Khám phá không thành công. Hãy thử lại!`, threadID, messageID);
+    }
+
+    if (action === "treasure") {
+      const treasureChance = Math.random() * 100;
+      if (treasureChance < 5) { // 5% chance
+        const rewards = [
+          { item: "Key", amount: 1 },
+          { item: "Oxygen Tank", amount: 1 },
+          { item: "Gacha Ticket", amount: 1 },
+          { item: "Đá nâng cấp", amount: 3 }
+        ];
+        const reward = rewards[Math.floor(Math.random() * rewards.length)];
+        
+        if (reward.item === "Key") data.exploration.keys += reward.amount;
+        else if (reward.item === "Oxygen Tank") data.exploration.oxygenTank += reward.amount;
+        else if (reward.item === "Gacha Ticket") data.gacha.tickets += reward.amount;
+        else if (reward.item === "Đá nâng cấp") data.inventory["Đá nâng cấp"] = (data.inventory["Đá nâng cấp"] || 0) + reward.amount;
+        
+        fs.writeFileSync(userFile, JSON.stringify(data, null, 2));
+        return api.sendMessage(`💎 Tìm thấy kho báu! +${reward.amount} ${reward.item}!`, threadID, messageID);
+      }
+      
+      return api.sendMessage(`🗺️ Không tìm thấy kho báu. Hãy thử lại!`, threadID, messageID);
+    }
+
+    if (action === "map") {
+      return api.sendMessage(
+        `🗺️ BẢN ĐỒ THẾ GIỚI\n\n` +
+        `📍 Khu vực đã khám phá: ${data.exploration.discoveredAreas.length}/15\n` +
+        `🗝️ Keys: ${data.exploration.keys}\n` +
+        `🤿 Oxygen Tanks: ${data.exploration.oxygenTank}\n` +
+        `🎫 Gacha Tickets: ${data.gacha.tickets}\n\n` +
+        `💡 Tips: Dùng ".fish explore discover" để tìm khu vực mới!`,
+        threadID, messageID
+      );
+    }
+
+    return api.sendMessage(`❌ Lệnh không hợp lệ. Dùng ".fish explore" để xem hướng dẫn.`, threadID, messageID);
   }
 };
